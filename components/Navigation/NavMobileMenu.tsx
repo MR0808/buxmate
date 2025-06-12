@@ -9,7 +9,8 @@ import {
     Sheet,
     SheetHeader,
     SheetContent,
-    SheetTrigger
+    SheetTrigger,
+    SheetTitle
 } from '@/components/ui/sheet';
 import NavMenuClassic from './NavMenuClassic';
 import { useMobileMenuConfig } from '@/hooks/use-mobile-menu';
@@ -48,15 +49,17 @@ const NavMobileMenu = () => {
                 side="left"
             >
                 <SheetHeader>
-                    <Link href="/" className="flex gap-2 items-center     ">
-                        <Image
-                            src="/images/logo/logo.png"
-                            alt="Buxmate"
-                            height={64}
-                            width={120}
-                            className="text-default-900 h-16 [&>path:nth-child(3)]:text-background [&>path:nth-child(2)]:text-background"
-                        />
-                    </Link>
+                    <SheetTitle>
+                        <Link href="/" className="flex gap-2 items-center     ">
+                            <Image
+                                src="/images/logo/logo.png"
+                                alt="Buxmate"
+                                height={64}
+                                width={120}
+                                className="text-default-900 h-16 [&>path:nth-child(3)]:text-background [&>path:nth-child(2)]:text-background"
+                            />
+                        </Link>
+                    </SheetTitle>
                 </SheetHeader>
                 <NavMenuClassic />
             </SheetContent>

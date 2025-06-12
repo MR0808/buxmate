@@ -8,7 +8,7 @@ const NavContent = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <header
-            className={cn('top-0 z-50', 'sticky', {
+            className={cn('top-0 z-50 md:px-14', 'sticky', {
                 'has-sticky-header': true
             })}
         >

@@ -1,5 +1,6 @@
 import NavContent from './NavContent';
 import NavLogo from './NavLogo';
+import NavMenu from './NavMenu';
 import NavMessages from './NavMessages';
 import NavMobileMenu from './NavMobileMenu';
 import NavNotifications from './NavNotifications';
@@ -21,6 +22,7 @@ const NavMain = () => {
                     <NavMobileMenu />
                 </div>
             </NavContent>
+            <NavMenu />
         </>
     );
 };

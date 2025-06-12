@@ -1,7 +1,6 @@
 'use client';
 
 import { CSSProperties, Fragment } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable } from '@dnd-kit/sortable';

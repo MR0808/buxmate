@@ -31,6 +31,100 @@ export type Group = {
 const getMenuList = (pathname: string): Group[] => {
     return [
         {
+            groupLabel: 'dashboard',
+            id: 'dashboard',
+            menus: [
+                {
+                    id: 'dashboard',
+                    href: '/dashboard/analytics',
+                    label: 'dashboard',
+                    active: pathname.includes('/dashboard'),
+                    icon: 'House',
+                    submenus: [
+                        {
+                            href: '/dashboard/analytics',
+                            label: 'analytics',
+                            active: pathname === '/dashboard/analytics',
+                            icon: 'Arrow',
+                            children: []
+                        },
+                        {
+                            href: '/dashboard/dash-ecom',
+                            label: 'ecommerce',
+                            active: pathname === '/dashboard/dash-ecom',
+                            icon: 'ShoppingCart',
+                            children: []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            groupLabel: 'apps',
+            id: 'app',
+            menus: [
+                {
+                    id: 'chat',
+                    href: '/app/chat',
+                    label: 'chat',
+                    active: pathname.includes('/app/chat'),
+                    icon: 'MessageCircleMore',
+                    submenus: []
+                },
+                {
+                    id: 'email',
+                    href: '/app/email',
+                    label: 'email',
+                    active: pathname.includes('/app/email'),
+                    icon: 'Mail',
+                    submenus: []
+                },
+
+                {
+                    id: 'calendar',
+                    href: '/app/calendar',
+                    label: 'calendar',
+                    active: pathname.includes('/app/calendar'),
+                    icon: 'CalendarMinus2',
+                    submenus: []
+                }
+            ]
+        }
+    ];
+};
+
+export const getHorizontalMenuList = (pathname: string): Group[] => {
+    return [
+        {
+            groupLabel: 'dashboard',
+            id: 'dashboard',
+            menus: [
+                {
+                    id: 'dashboard',
+                    href: '/dashboard/analytics',
+                    label: 'dashboard',
+                    active: pathname.includes('/dashboard'),
+                    icon: 'House',
+                    submenus: [
+                        {
+                            href: '/dashboard/analytics',
+                            label: 'analytics',
+                            active: pathname === '/dashboard/analytics',
+                            icon: 'Arrow',
+                            children: []
+                        },
+                        {
+                            href: '/dashboard/dash-ecom',
+                            label: 'ecommerce',
+                            active: pathname === '/dashboard/dash-ecom',
+                            icon: 'ShoppingCart',
+                            children: []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             groupLabel: 'apps',
             id: 'app',
             menus: [
