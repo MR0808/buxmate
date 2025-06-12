@@ -3,7 +3,6 @@
 import { Ellipsis } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 import getMenuList from '@/lib/menus';
@@ -17,7 +16,6 @@ import {
 import { useConfig } from '@/hooks/use-config';
 import {
     MenuLabel,
-    MenuWidget,
     MenuItem,
     CollapseMenuButton,
     SidebarHoverToggle
@@ -31,9 +29,8 @@ const NavMenuClassic = ({}) => {
     const pathname = usePathname();
 
     const isDesktop = useMediaQuery('(min-width: 1280px)');
-    const t = useTranslations('Menu');
 
-    const menuList = getMenuList(pathname, t);
+    const menuList = getMenuList(pathname);
     const [config, setConfig] = useConfig();
     const collapsed = config.collapsed;
     const [hoverConfig] = useMenuHoverConfig();
@@ -160,11 +157,6 @@ const NavMenuClassic = ({}) => {
                                 )}
                             </li>
                         ))}
-                        {!collapsed && (
-                            <li className="w-full grow flex items-end">
-                                <MenuWidget />
-                            </li>
-                        )}
                     </ul>
                 </nav>
             </ScrollArea>

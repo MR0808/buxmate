@@ -28,16 +28,16 @@ export type Group = {
     id: string;
 };
 
-const getMenuList = (pathname: string, t: any): Group[] => {
+const getMenuList = (pathname: string): Group[] => {
     return [
         {
-            groupLabel: t('apps'),
+            groupLabel: 'apps',
             id: 'app',
             menus: [
                 {
                     id: 'chat',
                     href: '/app/chat',
-                    label: t('chat'),
+                    label: 'chat',
                     active: pathname.includes('/app/chat'),
                     icon: 'MessageCircleMore',
                     submenus: []
@@ -45,7 +45,7 @@ const getMenuList = (pathname: string, t: any): Group[] => {
                 {
                     id: 'email',
                     href: '/app/email',
-                    label: t('email'),
+                    label: 'email',
                     active: pathname.includes('/app/email'),
                     icon: 'Mail',
                     submenus: []
@@ -54,7 +54,7 @@ const getMenuList = (pathname: string, t: any): Group[] => {
                 {
                     id: 'calendar',
                     href: '/app/calendar',
-                    label: t('calendar'),
+                    label: 'calendar',
                     active: pathname.includes('/app/calendar'),
                     icon: 'CalendarMinus2',
                     submenus: []
