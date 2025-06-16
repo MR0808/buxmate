@@ -101,9 +101,8 @@ export const MenuItem = ({
                 setMobileMenuConfig({ ...mobileMenuConfig, isOpen: false })
             }
             variant={active ? 'default' : 'ghost'}
-            fullWidth
             color={active ? 'default' : 'secondary'}
-            className={cn('hover:ring-transparent hover:ring-offset-0', {
+            className={cn('hover:ring-transparent hover:ring-offset-0 w-full', {
                 'justify-start text-sm font-medium capitalize h-auto py-3 md:px-3 px-3':
                     !collapsed || hovered,
                 'bg-secondary text-default hover:bg-secondary': active
@@ -175,9 +174,8 @@ export const CollapseMenuButton = ({
                         variant={active ? 'default' : 'ghost'}
                         color="secondary"
                         className={cn(
-                            'justify-start capitalize group  h-auto py-3 md:px-3 px-3   ring-offset-sidebar group-data-[state=open]:bg-secondary hover:ring-transparent'
+                            'justify-start capitalize group  h-auto py-3 md:px-3 px-3   ring-offset-sidebar group-data-[state=open]:bg-secondary hover:ring-transparent w-full'
                         )}
-                        fullWidth
                     >
                         <div className="w-full items-center flex justify-between">
                             <div className="flex items-center">
@@ -390,7 +388,6 @@ export const MultiCollapseMenuButton = ({
                         color="secondary"
                         variant="ghost"
                         className="w-full justify-start h-auto hover:bg-transparent hover:ring-offset-0 capitalize text-sm font-normal   md:px-5 px-5 "
-                        fullWidth
                     >
                         <div className="w-full items-center flex justify-between">
                             <div className="flex items-center">
