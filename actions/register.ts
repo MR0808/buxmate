@@ -19,6 +19,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         await auth.api.signUpEmail({
             body: {
                 name,
+                lastName,
                 email,
                 password
             }

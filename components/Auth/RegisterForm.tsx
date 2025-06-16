@@ -25,8 +25,7 @@ import {
 } from '@/components/Form/FormInputAuth';
 
 const RegisterForm = () => {
-    const [error, setError] = useState<string | undefined>('');
-    const [success, setSuccess] = useState<string | undefined>('');
+    const [success, setSuccess] = useState(false);
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -42,8 +41,7 @@ const RegisterForm = () => {
     });
 
     const onSubmit = (values: z.infer<typeof RegisterSchema>) => {
-        setError('');
-        setSuccess('');
+        setSuccess(false);
 
         startTransition(async () => {
             const { error } = await register(values);
@@ -54,7 +52,7 @@ const RegisterForm = () => {
                     'Registration complete. Please verify your email.',
                     { position: 'top-center' }
                 );
-                router.push('/auth/register/success');
+                setSuccess(true);
             }
         });
     };
@@ -79,7 +77,7 @@ const RegisterForm = () => {
         });
     };
 
-    return (
+    return !success ? (
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit, onError)}
@@ -178,6 +176,11 @@ const RegisterForm = () => {
                 />
             </form>
         </Form>
+    ) : (
+        <div className="text-default-500 text-base text-center">
+            You have successfully registered. Please check your email for the
+            verification link.
+        </div>
     );
 };
 

@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-import LoginForm from '@/components/Auth/LoginForm';
-import SocialLogin from '@/components/Auth/SocialLogin';
-
-const LoginPage = () => {
+const LoginErrorPage = async ({
+    searchParams
+}: {
+    searchParams: Promise<{ error: string }>;
+}) => {
+    const sp = await searchParams;
     return (
         <>
             <div
@@ -41,28 +43,22 @@ const LoginPage = () => {
                                 </Link>
                             </div>
                             <div className="text-center 2xl:mb-10 mb-5">
-                                <h4 className="font-medium">Sign In</h4>
+                                <h4 className="font-medium">
+                                    Error with Login
+                                </h4>
                                 <div className="text-default-500  text-base">
-                                    Sign in to your account to start using
-                                    Buxmate
+                                    {sp.error === 'account_not_linked'
+                                        ? 'This account is already linked to another sign-in method.'
+                                        : 'Oops! Something went wrong. Please try again.'}
                                 </div>
-                            </div>
-                            <LoginForm />
-                            <div className=" relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
-                                <div className=" absolute inline-block  bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm  text-default-500  font-normal ">
-                                    or
-                                </div>
-                            </div>
-                            <div className="max-w-[242px] mx-auto mt-8 w-full">
-                                <SocialLogin action="login" />
                             </div>
                             <div className="mx-auto font-normal text-default-500  2xl:mt-12 mt-6 uppercase text-sm text-center">
-                                {` Don't`} have an account?
+                                Back to
                                 <Link
-                                    href="/auth/register"
+                                    href="/auth/login"
                                     className="text-default-900 font-medium hover:underline ps-1"
                                 >
-                                    Register
+                                    Login
                                 </Link>
                             </div>
                         </div>
@@ -79,4 +75,4 @@ const LoginPage = () => {
     );
 };
 
-export default LoginPage;
+export default LoginErrorPage;

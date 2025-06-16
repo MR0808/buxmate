@@ -1,0 +1,106 @@
+'use client';
+
+import { useForm, SubmitErrorHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useTransition, useState } from 'react';
+import { toast } from 'sonner';
+
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { SubmitButton } from '@/components/Form/FormInputAuth';
+import { EmailSchema } from '@/schemas/auth';
+import { sendVerificationEmail } from '@/lib/auth-client';
+
+const EmailVerificationForm = () => {
+    const [success, setSuccess] = useState(false);
+    const [isPending, startTransition] = useTransition();
+
+    const form = useForm<z.infer<typeof EmailSchema>>({
+        resolver: zodResolver(EmailSchema),
+        defaultValues: {
+            email: ''
+        }
+    });
+
+    const onSubmit = (values: z.infer<typeof EmailSchema>) => {
+        setSuccess(false);
+        startTransition(async () => {
+            await sendVerificationEmail({
+                email: values.email,
+                callbackURL: '/auth/verify',
+                fetchOptions: {
+                    onError: (ctx) => {
+                        toast.error(ctx.error.message);
+                    },
+                    onSuccess: () => {
+                        setSuccess(true);
+                        toast.success('Verification email sent successfully!');
+                    }
+                }
+            });
+        });
+    };
+
+    const onError: SubmitErrorHandler<z.infer<typeof EmailSchema>> = (
+        errors
+    ) => {
+        console.log(errors);
+        const errorMessages = Object.entries(errors).map(([field, error]) => (
+            <li key={field}>{error.message || `Invalid ${field}`}</li>
+        ));
+
+        toast.dismiss();
+
+        toast.error('There were errors in your registration', {
+            position: 'top-center',
+            description: (
+                <ul className="list-disc ml-4 space-y-1">{errorMessages}</ul>
+            ),
+            closeButton: true,
+            duration: Infinity
+        });
+    };
+
+    return !success ? (
+        <Form {...form}>
+            <form
+                onSubmit={form.handleSubmit(onSubmit, onError)}
+                className="mt-5 2xl:mt-7 space-y-4"
+            >
+                <div className="space-y-2">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                    <Input {...field} type="email" />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <SubmitButton
+                    text="Resend Verification Email"
+                    className="w-full"
+                    isPending={isPending}
+                />
+            </form>
+        </Form>
+    ) : (
+        <div className="text-default-500 text-base text-center">
+            Your verification email has been resent.
+        </div>
+    );
+};
+
+export default EmailVerificationForm;

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 import RegisterForm from '@/components/Auth/RegisterForm';
+import SocialLogin from '@/components/Auth/SocialLogin';
 
 const RegisterPage = () => {
     return (
@@ -45,6 +46,14 @@ const RegisterPage = () => {
                             </div>
                         </div>
                         <RegisterForm />
+                        <div className=" relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
+                            <div className=" absolute inline-block  bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm  text-default-500  font-normal ">
+                                or
+                            </div>
+                        </div>
+                        <div className="max-w-[242px] mx-auto mt-8 w-full">
+                            <SocialLogin action="register" />
+                        </div>
                         <div className="mx-auto font-normal text-default-500  2xl:mt-12 mt-6 uppercase text-sm text-center">
                             Already have an account?
                             <Link

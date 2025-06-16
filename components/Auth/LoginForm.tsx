@@ -144,7 +144,7 @@ const LoginForm = () => {
                     </Link>
                 </div>
                 <SubmitButton
-                    text="Create an Account"
+                    text="Login"
                     className="w-full"
                     isPending={isPending}
                 />

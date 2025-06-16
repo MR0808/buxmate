@@ -1,23 +1,53 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
-import { createAuthMiddleware, APIError } from 'better-auth/api';
+import { createAuthMiddleware } from 'better-auth/api';
+import { admin } from 'better-auth/plugins';
+import { UserRole } from '@/generated/prisma';
 
 import { normalizeName } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
+import { ac, roles } from '@/lib/permissions';
+import { sendVerificationEmail } from '@/lib/mail';
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: 'postgresql' // or "mysql", "postgresql", ...etc
     }),
+    socialProviders: {
+        google: {
+            clientId: String(process.env.GOOGLE_CLIENT_ID),
+            clientSecret: String(process.env.GOOGLE_CLIENT_SECRET),
+            mapProfileToUser: (profile) => {
+                return {
+                    name: profile.given_name,
+                    lastName: profile.family_name
+                };
+            }
+        }
+    },
     emailAndPassword: {
         enabled: true,
         password: {
             hash: hashPassword,
             verify: verifyPassword
         },
-        autoSignIn: false
+        autoSignIn: false,
+        requireEmailVerification: true
+    },
+    emailVerification: {
+        sendOnSignUp: true,
+        autoSignInAfterVerification: true,
+        expiresIn: 60 * 60,
+        sendVerificationEmail: async ({ user, url }) => {
+            const link = new URL(url);
+            link.searchParams.set('callbackURL', '/auth/verify');
+            await sendVerificationEmail({
+                email: user.email,
+                link: String(link)
+            });
+        }
     },
     hooks: {
         before: createAuthMiddleware(async (ctx) => {
@@ -39,6 +69,14 @@ export const auth = betterAuth({
             generateId: false
         }
     },
+    user: {
+        additionalFields: {
+            lastName: {
+                type: 'string',
+                required: true
+            }
+        }
+    },
     session: {
         expiresIn: 30 * 24 * 60 * 60,
         cookieCache: {
@@ -46,7 +84,15 @@ export const auth = betterAuth({
             maxAge: 5 * 60
         }
     },
-    plugins: [nextCookies()]
+    plugins: [
+        nextCookies(),
+        admin({
+            defaultRole: UserRole.USER,
+            adminRoles: [UserRole.ADMIN],
+            ac,
+            roles
+        })
+    ]
 });
 
 export type ErrorCode = keyof typeof auth.$ERROR_CODES | 'UNKNOWN';

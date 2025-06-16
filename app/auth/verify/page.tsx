@@ -1,10 +1,17 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { redirect } from 'next/navigation';
+import EmailVerificationForm from '@/components/Auth/EmailVerificationForm';
 
-import LoginForm from '@/components/Auth/LoginForm';
-import SocialLogin from '@/components/Auth/SocialLogin';
+const VerifyPage = async ({
+    searchParams
+}: {
+    searchParams: Promise<{ error: string }>;
+}) => {
+    const error = (await searchParams).error;
 
-const LoginPage = () => {
+    // if (!error) redirect('/');
+
     return (
         <>
             <div
@@ -41,28 +48,31 @@ const LoginPage = () => {
                                 </Link>
                             </div>
                             <div className="text-center 2xl:mb-10 mb-5">
-                                <h4 className="font-medium">Sign In</h4>
-                                <div className="text-default-500  text-base">
-                                    Sign in to your account to start using
-                                    Buxmate
+                                <h4 className="font-medium">
+                                    {error === 'invalid_token' ||
+                                    error === 'token_expired'
+                                        ? 'Error with Email Verification'
+                                        : error === 'email_not_verified'
+                                          ? 'Email not Verified'
+                                          : 'Oops! Something went wrong. Please try again.'}
+                                </h4>
+                                <div className="text-default-500 text-base">
+                                    {error === 'invalid_token' ||
+                                    error === 'token_expired'
+                                        ? 'Your token is invalid or expired please request a new one.'
+                                        : error === 'email_not_verified'
+                                          ? 'Please verify your email, or request a new verification below'
+                                          : 'Oops! Something went wrong. Please try again.'}
                                 </div>
                             </div>
-                            <LoginForm />
-                            <div className=" relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
-                                <div className=" absolute inline-block  bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm  text-default-500  font-normal ">
-                                    or
-                                </div>
-                            </div>
-                            <div className="max-w-[242px] mx-auto mt-8 w-full">
-                                <SocialLogin action="login" />
-                            </div>
+                            <EmailVerificationForm />
                             <div className="mx-auto font-normal text-default-500  2xl:mt-12 mt-6 uppercase text-sm text-center">
-                                {` Don't`} have an account?
+                                Back to
                                 <Link
-                                    href="/auth/register"
+                                    href="/auth/login"
                                     className="text-default-900 font-medium hover:underline ps-1"
                                 >
-                                    Register
+                                    Login
                                 </Link>
                             </div>
                         </div>
@@ -79,4 +89,4 @@ const LoginPage = () => {
     );
 };
 
-export default LoginPage;
+export default VerifyPage;
