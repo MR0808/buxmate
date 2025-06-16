@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useForm, SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,44 +17,49 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { register } from '@/actions/register';
+import { RegisterSchema } from '@/schemas/auth';
 import {
     PasswordInputAuth,
     SubmitButton
 } from '@/components/Form/FormInputAuth';
-import { LoginSchema } from '@/schemas/auth';
-import { login } from '@/actions/login';
 
-const LoginForm = () => {
+const RegisterForm = () => {
     const [error, setError] = useState<string | undefined>('');
     const [success, setSuccess] = useState<string | undefined>('');
-
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
-    const form = useForm<z.infer<typeof LoginSchema>>({
-        resolver: zodResolver(LoginSchema),
+    const form = useForm<z.infer<typeof RegisterSchema>>({
+        resolver: zodResolver(RegisterSchema),
         defaultValues: {
+            name: '',
+            lastName: '',
             email: '',
-            password: ''
+            password: '',
+            terms: false
         }
     });
 
-    const onSubmit = (values: z.infer<typeof LoginSchema>) => {
+    const onSubmit = (values: z.infer<typeof RegisterSchema>) => {
         setError('');
         setSuccess('');
 
         startTransition(async () => {
-            const { error } = await login(values);
+            const { error } = await register(values);
             if (error) {
                 toast.error(error, { position: 'top-center' });
             } else {
-                toast.success('Log in successful', { position: 'top-center' });
-                router.push('/');
+                toast.success(
+                    'Registration complete. Please verify your email.',
+                    { position: 'top-center' }
+                );
+                router.push('/auth/register/success');
             }
         });
     };
 
-    const onError: SubmitErrorHandler<z.infer<typeof LoginSchema>> = (
+    const onError: SubmitErrorHandler<z.infer<typeof RegisterSchema>> = (
         errors
     ) => {
         console.log(errors);
@@ -79,8 +83,38 @@ const LoginForm = () => {
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit, onError)}
-                className="mt-5 2xl:mt-7 space-y-4"
+                className="space-y-4"
             >
+                <div className="flex flex-row space-x-2">
+                    <div className="space-y-2">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>First Name</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} type="text" />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <FormField
+                            control={form.control}
+                            name="lastName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Last Name</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} type="text" />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                </div>
                 <div className="space-y-2">
                     <FormField
                         control={form.control}
@@ -95,8 +129,7 @@ const LoginForm = () => {
                         )}
                     />
                 </div>
-
-                <div className="mt-3.5 space-y-2">
+                <div className="space-y-2">
                     <FormField
                         control={form.control}
                         name="password"
@@ -120,7 +153,7 @@ const LoginForm = () => {
                     <div className="flex gap-2 items-center">
                         <FormField
                             control={form.control}
-                            name="rememberMe"
+                            name="terms"
                             render={({ field }) => (
                                 <FormItem className={cn('flex flex-row')}>
                                     <FormControl>
@@ -130,18 +163,13 @@ const LoginForm = () => {
                                         />
                                     </FormControl>
                                     <FormLabel className={cn('gap-0')}>
-                                        Keep me signed in
+                                        You must accept our terms and conditions
+                                        and privacy policy
                                     </FormLabel>
                                 </FormItem>
                             )}
                         />
                     </div>
-                    <Link
-                        href="/auth/forgot-password"
-                        className="text-sm text-default-800 dark:text-default-400 leading-6 font-medium"
-                    >
-                        Forgot Password?
-                    </Link>
                 </div>
                 <SubmitButton
                     text="Create an Account"
@@ -153,4 +181,4 @@ const LoginForm = () => {
     );
 };
 
-export default LoginForm;
+export default RegisterForm;

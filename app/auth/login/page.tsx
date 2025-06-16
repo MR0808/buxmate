@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 import LoginForm from '@/components/Auth/LoginForm';
 
-const Login3 = () => {
+const LoginPage = () => {
     return (
         <>
             <div
@@ -43,7 +43,7 @@ const Login3 = () => {
                                 <h4 className="font-medium">Sign In</h4>
                                 <div className="text-default-500  text-base">
                                     Sign in to your account to start using
-                                    Dashcode
+                                    Buxmate
                                 </div>
                             </div>
                             <LoginForm />
@@ -53,7 +53,7 @@ const Login3 = () => {
                                     href="/auth/register"
                                     className="text-default-900 font-medium hover:underline ps-1"
                                 >
-                                    Sign Up
+                                    Register
                                 </Link>
                             </div>
                         </div>
@@ -70,4 +70,4 @@ const Login3 = () => {
     );
 };
 
-export default Login3;
+export default LoginPage;

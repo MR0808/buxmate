@@ -22,6 +22,7 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
+import NavSignOutButton from '@/components/Navigation/NavSignOutButton';
 
 const NavProfileInfo = async () => {
     return (
@@ -94,13 +95,14 @@ const NavProfileInfo = async () => {
                     <DropdownMenuSeparator className="mb-0 dark:bg-background" />
                     <DropdownMenuItem className="flex items-center gap-2 text-sm font-medium text-default-600 capitalize my-1 px-3 cursor-pointer">
                         <div>
-                            <button
+                            <NavSignOutButton />
+                            {/* <button
                                 type="button"
                                 className=" w-full cursor-pointer flex  items-center gap-2"
                             >
                                 <Power className="w-4 h-4" />
                                 Log out
-                            </button>
+                            </button> */}
                         </div>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
