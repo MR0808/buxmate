@@ -58,14 +58,13 @@ const LoginForm = () => {
     const onError: SubmitErrorHandler<z.infer<typeof LoginSchema>> = (
         errors
     ) => {
-        console.log(errors);
         const errorMessages = Object.entries(errors).map(([field, error]) => (
             <li key={field}>{error.message || `Invalid ${field}`}</li>
         ));
 
         toast.dismiss();
 
-        toast.error('There were errors in your registration', {
+        toast.error('There were errors in your login', {
             position: 'top-center',
             description: (
                 <ul className="list-disc ml-4 space-y-1">{errorMessages}</ul>

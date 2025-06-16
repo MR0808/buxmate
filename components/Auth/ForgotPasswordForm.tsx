@@ -16,9 +16,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { SubmitButton } from '@/components/Form/FormInputAuth';
 import { EmailSchema } from '@/schemas/auth';
-import { sendVerificationEmail } from '@/lib/auth-client';
+import { forgetPassword } from '@/lib/auth-client';
 
-const EmailVerificationForm = () => {
+const ForgotPasswordForm = () => {
     const [success, setSuccess] = useState(false);
     const [isPending, startTransition] = useTransition();
 
@@ -32,16 +32,18 @@ const EmailVerificationForm = () => {
     const onSubmit = (values: z.infer<typeof EmailSchema>) => {
         setSuccess(false);
         startTransition(async () => {
-            await sendVerificationEmail({
+            await forgetPassword({
                 email: values.email,
-                callbackURL: '/auth/verify',
+                redirectTo: '/auth/reset-password',
                 fetchOptions: {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
                     onSuccess: () => {
                         setSuccess(true);
-                        toast.success('Verification email sent successfully!');
+                        toast.success(
+                            'Reset password email sent successfully!'
+                        );
                     }
                 }
             });
@@ -82,7 +84,7 @@ const EmailVerificationForm = () => {
                 </div>
 
                 <SubmitButton
-                    text="Resend Verification Email"
+                    text="Reset Password"
                     className="w-full"
                     isPending={isPending}
                 />
@@ -90,9 +92,9 @@ const EmailVerificationForm = () => {
         </Form>
     ) : (
         <div className="text-default-500 text-base text-center">
-            Your verification email has been resent.
+            Your reset password email has been resent.
         </div>
     );
 };
 
-export default EmailVerificationForm;
+export default ForgotPasswordForm;

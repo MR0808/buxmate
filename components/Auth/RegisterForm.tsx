@@ -60,7 +60,6 @@ const RegisterForm = () => {
     const onError: SubmitErrorHandler<z.infer<typeof RegisterSchema>> = (
         errors
     ) => {
-        console.log(errors);
         const errorMessages = Object.entries(errors).map(([field, error]) => (
             <li key={field}>{error.message || `Invalid ${field}`}</li>
         ));

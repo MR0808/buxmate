@@ -9,7 +9,7 @@ import { normalizeName } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
 import { ac, roles } from '@/lib/permissions';
-import { sendVerificationEmail } from '@/lib/mail';
+import { sendVerificationEmail, sendResetEmail } from '@/lib/mail';
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -34,7 +34,13 @@ export const auth = betterAuth({
             verify: verifyPassword
         },
         autoSignIn: false,
-        requireEmailVerification: true
+        requireEmailVerification: true,
+        sendResetPassword: async ({ user, url }) => {
+            await sendResetEmail({
+                email: user.email,
+                link: url
+            });
+        }
     },
     emailVerification: {
         sendOnSignUp: true,
