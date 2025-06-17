@@ -4,7 +4,7 @@ import { CSSProperties, Fragment } from 'react';
 import Link from 'next/link';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable } from '@dnd-kit/sortable';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
@@ -40,6 +40,7 @@ import { useMobileMenuConfig } from '@/hooks/use-mobile-menu';
 import { useMenuHoverConfig } from '@/hooks/use-menu-hover';
 import { LucideIcon } from '@/utils/LucideIcon';
 import { SubChildren, Submenu } from '@/lib/menus';
+import { signOut } from '@/lib/auth-client';
 
 interface MenuItemProps {
     href: string;
@@ -81,6 +82,55 @@ export const MenuLabel = ({
         >
             {label}
         </p>
+    );
+};
+
+export const LogOutItem = () => {
+    const [mobileMenuConfig, setMobileMenuConfig] = useMobileMenuConfig();
+    const router = useRouter();
+
+    return (
+        <li className={cn('w-full')}>
+            <div className="w-full mb-2 last:mb-0">
+                <TooltipProvider disableHoverableContent>
+                    <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <Button
+                                    onClick={async () => {
+                                        setMobileMenuConfig({
+                                            ...mobileMenuConfig,
+                                            isOpen: false
+                                        });
+                                        await signOut({
+                                            fetchOptions: {
+                                                onSuccess: () => {
+                                                    router.push('/auth/login'); // redirect to login page
+                                                }
+                                            }
+                                        });
+                                    }}
+                                    variant="ghost"
+                                    color="secondary"
+                                    className={cn(
+                                        'hover:ring-transparent hover:ring-offset-0 w-full justify-start text-sm font-medium capitalize h-auto py-3 md:px-3 px-3'
+                                    )}
+                                    size="default"
+                                >
+                                    <LucideIcon
+                                        name="Power"
+                                        className={cn('h-5 w-5 me-2')}
+                                    />
+                                    <p className={cn('max-w-[200px] truncate')}>
+                                        Logout
+                                    </p>
+                                </Button>
+                            </div>
+                        </TooltipTrigger>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
+        </li>
     );
 };
 

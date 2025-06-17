@@ -1,17 +1,8 @@
-import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
-
 import HomeMain from '@/components/Home/HomeMain';
-import { auth } from '@/lib/auth';
+import { authCheck } from '@/lib/authCheck';
 
 const HomePage = async () => {
-    const headerList = await headers();
-
-    const session = await auth.api.getSession({
-        headers: headerList
-    });
-
-    if (!session) redirect('/auth/login');
+    const { user, session } = await authCheck();
 
     return <HomeMain />;
 };

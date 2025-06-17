@@ -26,9 +26,6 @@ import { LoginSchema } from '@/schemas/auth';
 import { login } from '@/actions/login';
 
 const LoginForm = () => {
-    const [error, setError] = useState<string | undefined>('');
-    const [success, setSuccess] = useState<string | undefined>('');
-
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
 
@@ -36,14 +33,12 @@ const LoginForm = () => {
         resolver: zodResolver(LoginSchema),
         defaultValues: {
             email: '',
-            password: ''
+            password: '',
+            rememberMe: true
         }
     });
 
     const onSubmit = (values: z.infer<typeof LoginSchema>) => {
-        setError('');
-        setSuccess('');
-
         startTransition(async () => {
             const { error } = await login(values);
             if (error) {

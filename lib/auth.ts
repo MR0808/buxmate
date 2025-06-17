@@ -1,17 +1,17 @@
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
-import { createAuthMiddleware } from 'better-auth/api';
-import { admin } from 'better-auth/plugins';
 import { UserRole } from '@/generated/prisma';
+import { admin, customSession, openAPI } from 'better-auth/plugins';
 
-import { normalizeName } from '@/lib/utils';
 import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
-import { ac, roles } from '@/lib/permissions';
 import { sendVerificationEmail, sendResetEmail } from '@/lib/mail';
+import { ac, roles } from '@/lib/permissions';
+import { listUserAccounts } from 'better-auth/api';
+import { headers } from 'next/headers';
 
-export const auth = betterAuth({
+const options = {
     database: prismaAdapter(prisma, {
         provider: 'postgresql' // or "mysql", "postgresql", ...etc
     }),
@@ -45,7 +45,6 @@ export const auth = betterAuth({
     emailVerification: {
         sendOnSignUp: true,
         autoSignInAfterVerification: true,
-        expiresIn: 60 * 60,
         sendVerificationEmail: async ({ user, url }) => {
             const link = new URL(url);
             link.searchParams.set('callbackURL', '/auth/verify');
@@ -54,21 +53,6 @@ export const auth = betterAuth({
                 link: String(link)
             });
         }
-    },
-    hooks: {
-        before: createAuthMiddleware(async (ctx) => {
-            if (ctx.path === '/sign-up/email') {
-                return {
-                    context: {
-                        ...ctx,
-                        body: {
-                            ...ctx.body,
-                            name: normalizeName(ctx.body.name)
-                        }
-                    }
-                };
-            }
-        })
     },
     advanced: {
         database: {
@@ -80,6 +64,10 @@ export const auth = betterAuth({
             lastName: {
                 type: 'string',
                 required: true
+            },
+            role: {
+                type: ['USER', 'ADMIN'] as Array<UserRole>,
+                input: false
             }
         }
     },
@@ -98,6 +86,32 @@ export const auth = betterAuth({
             ac,
             roles
         })
+    ]
+} satisfies BetterAuthOptions;
+
+export const auth = betterAuth({
+    ...options,
+    plugins: [
+        ...(options.plugins ?? []),
+        customSession(async ({ user, session }) => {
+            // const accounts = await listUserAccounts({
+            //     headers: await headers()
+            // });
+            let hasGoogleAccount = false;
+            // if (accounts) {
+            //     hasGoogleAccount = accounts.some(
+            //         (account) => account.provider === 'google'
+            //     );
+            // }
+            return {
+                session,
+                user: {
+                    ...user,
+                    oauth: hasGoogleAccount
+                }
+            };
+        }, options),
+        openAPI()
     ]
 });
 

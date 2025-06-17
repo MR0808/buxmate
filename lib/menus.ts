@@ -89,6 +89,20 @@ const getMenuList = (pathname: string): Group[] => {
                     submenus: []
                 }
             ]
+        },
+        {
+            groupLabel: 'user',
+            id: 'user',
+            menus: [
+                {
+                    id: 'settings',
+                    href: '/settings',
+                    label: 'settings',
+                    active: pathname.includes('/settings'),
+                    icon: 'Cog',
+                    submenus: []
+                }
+            ]
         }
     ];
 };

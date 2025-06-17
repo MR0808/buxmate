@@ -18,7 +18,8 @@ import {
     MenuLabel,
     MenuItem,
     CollapseMenuButton,
-    SidebarHoverToggle
+    SidebarHoverToggle,
+    LogOutItem
 } from './NavMenuComponents';
 import { useMenuHoverConfig } from '@/hooks/use-menu-hover';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -157,6 +158,7 @@ const NavMenuClassic = ({}) => {
                                 )}
                             </li>
                         ))}
+                        <LogOutItem />
                     </ul>
                 </nav>
             </ScrollArea>

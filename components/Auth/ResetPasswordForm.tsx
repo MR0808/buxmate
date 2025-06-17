@@ -19,7 +19,7 @@ import {
     SubmitButton
 } from '@/components/Form/FormInputAuth';
 import { ResetPasswordSchema } from '@/schemas/auth';
-import { resetPassword } from '@/lib/auth-client';
+import { resetPassword, updateUser } from '@/lib/auth-client';
 
 const ResetPasswordForm = ({ token }: { token: string }) => {
     const [isPending, startTransition] = useTransition();

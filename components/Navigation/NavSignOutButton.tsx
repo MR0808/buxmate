@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { Power } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { signOut } from '@/lib/auth-client';
 
 const NavSignOutButton = () => {
