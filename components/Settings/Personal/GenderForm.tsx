@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useTransition, useState } from 'react';
 import { toast } from 'sonner';
+import { Gender } from '@/generated/prisma';
 
 import {
     Form,
@@ -28,7 +29,6 @@ import { authClient, useSession } from '@/lib/auth-client';
 import { SubmitButton } from '@/components/Form/Buttons';
 import FormError from '@/components/Form/FormError';
 import { GenderSchema } from '@/schemas/personal';
-import { Gender } from '@prisma/client';
 import { GenderProps } from '@/types/personal';
 import { cn } from '@/lib/utils';
 
