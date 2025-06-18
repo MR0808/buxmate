@@ -90,4 +90,5 @@ const PersonalSettingsPage = async () => {
         </div>
     );
 };
+
 export default PersonalSettingsPage;
