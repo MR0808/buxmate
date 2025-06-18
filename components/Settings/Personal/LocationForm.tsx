@@ -122,7 +122,7 @@ const LocationForm = ({
 
     return (
         <div className="mt-8 border-b border-b-gray-200 pb-8">
-            <div className="w-3/5 flex flex-col gap-5">
+            <div className="w-full md:w-3/5 flex flex-col gap-5">
                 <div className="flex justify-between">
                     <h3 className="text-base font-semibold">Location</h3>
                     <div

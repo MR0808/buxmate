@@ -41,7 +41,7 @@ const PersonalSettingsPage = async () => {
         <div>
             <SiteBreadcrumb />
             <div className="grid grid-cols-12 gap-5">
-                <div className="lg:col-span-8 col-span-12">
+                <div className="lg:col-span-8 col-span-12 md:order-first order-last">
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-3xl">
@@ -49,7 +49,7 @@ const PersonalSettingsPage = async () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex md:w-full flex-col w-3/5">
+                            <div className="flex flex-col w-full ">
                                 {!hasGoogleAccount && (
                                     <NameForm userSession={userSession} />
                                 )}
@@ -74,7 +74,7 @@ const PersonalSettingsPage = async () => {
                         </CardContent>
                     </Card>
                 </div>
-                <div className="lg:col-span-4 col-span-12">
+                <div className="lg:col-span-4 col-span-12 order-first md:order-last">
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-3xl">

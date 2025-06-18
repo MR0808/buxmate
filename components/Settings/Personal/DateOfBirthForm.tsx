@@ -79,7 +79,7 @@ const DateOfBirthForm = ({ dateOfBirthProp }: DateOfBirthProps) => {
 
     return (
         <div className="mt-8">
-            <div className="w-3/5 flex flex-col gap-5">
+            <div className="w-full md:w-3/5 flex flex-col gap-5">
                 <div className="flex justify-between">
                     <h3 className="font-semibold text-base">
                         Date of Birth (must be over 18)

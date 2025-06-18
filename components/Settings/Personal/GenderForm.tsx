@@ -88,7 +88,7 @@ const GenderForm = ({ genderProp }: GenderProps) => {
 
     return (
         <div className="border-b border-b-gray-200 pb-8 mt-8">
-            <div className="w-3/5 flex flex-col gap-5">
+            <div className="w-full md:w-3/5 flex flex-col gap-5">
                 <div className="flex justify-between">
                     <h3 className="font-semibold text-base">Gender</h3>
                     <div
