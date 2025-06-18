@@ -1,15 +1,13 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
-import { UserRole } from '@/generated/prisma';
+import { UserRole, Gender } from '@/generated/prisma';
 import { admin, customSession, openAPI } from 'better-auth/plugins';
 
 import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
 import { sendVerificationEmail, sendResetEmail } from '@/lib/mail';
 import { ac, roles } from '@/lib/permissions';
-import { listUserAccounts } from 'better-auth/api';
-import { headers } from 'next/headers';
 
 const options = {
     database: prismaAdapter(prisma, {
@@ -66,8 +64,23 @@ const options = {
                 required: true
             },
             role: {
-                type: ['USER', 'ADMIN'] as Array<UserRole>,
-                input: false
+                type: ['USER', 'ADMIN'] as Array<UserRole>
+            },
+            gender: {
+                type: ['MALE', 'FEMALE', 'OTHER', 'NOTSAY'] as Array<Gender>,
+                required: false
+            },
+            dateOfBirth: {
+                type: 'date',
+                required: false
+            },
+            countryId: {
+                type: 'string',
+                required: false
+            },
+            stateId: {
+                type: 'string',
+                required: false
             }
         }
     },
@@ -94,21 +107,15 @@ export const auth = betterAuth({
     plugins: [
         ...(options.plugins ?? []),
         customSession(async ({ user, session }) => {
-            // const accounts = await listUserAccounts({
-            //     headers: await headers()
-            // });
-            let hasGoogleAccount = false;
-            // if (accounts) {
-            //     hasGoogleAccount = accounts.some(
-            //         (account) => account.provider === 'google'
-            //     );
-            // }
+            const accounts = await prisma.account.findMany({
+                where: { id: user.id }
+            });
             return {
                 session,
                 user: {
-                    ...user,
-                    oauth: hasGoogleAccount
-                }
+                    ...user
+                },
+                accounts
             };
         }, options),
         openAPI()

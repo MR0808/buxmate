@@ -6,9 +6,8 @@ import NavMobileMenu from './NavMobileMenu';
 import NavNotifications from './NavNotifications';
 import NavProfileInfo from './NavProfileInfo';
 import ThemeSwitcher from './ThemeSwitcher';
-import { NavProps } from '@/types/nav';
 
-const NavMain = ({ session }: NavProps) => {
+const NavMain = () => {
     return (
         <>
             <NavContent>
@@ -19,7 +18,7 @@ const NavMain = ({ session }: NavProps) => {
                     <ThemeSwitcher />
                     <NavMessages />
                     <NavNotifications />
-                    <NavProfileInfo session={session} />
+                    <NavProfileInfo />
                     <NavMobileMenu />
                 </div>
             </NavContent>

@@ -15,6 +15,13 @@ enum UserRole {
   ADMIN
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  NOTSAY
+}
+
 model Post {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -44,9 +51,15 @@ model User {
   banReason     String?
   banExpires    DateTime?
 
-  sessions Session[]
-  accounts Account[]
-  posts    Post[]
+  sessions    Session[]
+  accounts    Account[]
+  posts       Post[]
+  gender      Gender?
+  dateOfBirth DateTime?
+  country     Country?  @relation(fields: [countryId], references: [id])
+  countryId   String?
+  state       State?    @relation(fields: [stateId], references: [id])
+  stateId     String?
 
   @@map("users")
 }
@@ -99,4 +112,22 @@ model Verification {
   expiresAt  DateTime
 
   @@map("verifications")
+}
+
+model Country {
+  id       String  @id @default(cuid())
+  isoCode  String
+  name     String
+  currency String
+  states   State[]
+  users    User[]
+}
+
+model State {
+  id        String  @id @default(cuid())
+  isoCode   String
+  name      String
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryId String
+  users     User[]
 }

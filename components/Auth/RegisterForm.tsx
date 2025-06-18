@@ -36,6 +36,7 @@ const RegisterForm = () => {
             lastName: '',
             email: '',
             password: '',
+            overEighteen: false,
             terms: false
         }
     });
@@ -145,6 +146,27 @@ const RegisterForm = () => {
                             </FormItem>
                         )}
                     />
+                </div>
+                <div className="flex justify-between">
+                    <div className="flex gap-2 items-center">
+                        <FormField
+                            control={form.control}
+                            name="overEighteen"
+                            render={({ field }) => (
+                                <FormItem className={cn('flex flex-row')}>
+                                    <FormControl>
+                                        <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <FormLabel className={cn('gap-0')}>
+                                        I confirm that I am over 18 years old
+                                    </FormLabel>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                 </div>
                 <div className="flex justify-between">
                     <div className="flex gap-2 items-center">

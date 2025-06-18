@@ -25,6 +25,9 @@ export const RegisterSchema = z.object({
     password: z.string().min(8, {
         message: 'Password must have a minimum of 8 characters'
     }),
+    overEighteen: z.boolean().refine((val) => val === true, {
+        message: 'You must confirm that you are over 18 years old'
+    }),
     terms: z.boolean().refine((val) => val === true, {
         message: 'You must accept the terms and conditions'
     })

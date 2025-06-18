@@ -14,3 +14,15 @@ export const authCheck = async () => {
 
     return session;
 };
+
+export const authCheckServer = async () => {
+    const headerList = await headers();
+
+    const session = await auth.api.getSession({
+        headers: headerList
+    });
+
+    if (!session) return false;
+
+    return session;
+};

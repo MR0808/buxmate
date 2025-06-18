@@ -1,10 +1,41 @@
 import { authCheck } from '@/lib/authCheck';
 
+import {
+    getAllCountries,
+    getCountryByName,
+    getStatesByCountry,
+    getStateById,
+    getCountryById
+} from '@/lib/location';
 import SiteBreadcrumb from '@/components/Global/SiteBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import NameForm from '@/components/Settings/Personal/NameForm';
+import GenderForm from '@/components/Settings/Personal/GenderForm';
+import LocationForm from '@/components/Settings/Personal/LocationForm';
+import DateOfBirthForm from '@/components/Settings/Personal/DateOfBirthForm';
+import ProfilePictureForm from '@/components/Settings/Personal/ProfilePictureForm';
 
 const PersonalSettingsPage = async () => {
-    const { user, session } = await authCheck();
+    const userSession = await authCheck();
+    const { user } = userSession;
+
+    const hasGoogleAccount = userSession.accounts.some(
+        (account) => account.providerId === 'google'
+    );
+
+    const countries = await getAllCountries();
+    const defaultCountry = await getCountryByName('Australia');
+    if (!defaultCountry) return null;
+    const initialValueProp = user?.countryId ? true : false;
+    const states = user?.countryId
+        ? await getStatesByCountry(user.countryId)
+        : await getStatesByCountry(defaultCountry.id);
+    const country = user?.countryId
+        ? await getCountryById(user.countryId)
+        : await getCountryById(defaultCountry.id);
+    const state = user?.countryId
+        ? await getStateById(user.stateId || '')
+        : await getStateById(defaultCountry.id);
 
     return (
         <div>
@@ -18,12 +49,14 @@ const PersonalSettingsPage = async () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex w-80 flex-col sm:w-3/5">
-                                {!user?.isOAuth && (
-                                    <NameForm session={session} />
+                            <div className="flex md:w-full flex-col w-3/5">
+                                {!hasGoogleAccount && (
+                                    <NameForm userSession={userSession} />
                                 )}
-                                {/* <GenderForm
-                                    genderProp={userDb?.gender || undefined}
+                                <GenderForm
+                                    genderProp={
+                                        userSession.user.gender || undefined
+                                    }
                                 />
                                 <LocationForm
                                     countryProp={country || defaultCountry!}
@@ -34,9 +67,9 @@ const PersonalSettingsPage = async () => {
                                 />
                                 <DateOfBirthForm
                                     dateOfBirthProp={
-                                        userDb?.dateOfBirth || undefined
+                                        user.dateOfBirth || undefined
                                     }
-                                /> */}
+                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -48,7 +81,9 @@ const PersonalSettingsPage = async () => {
                                 Profile Picture
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>Pic goes here</CardContent>
+                        <CardContent>
+                            <ProfilePictureForm userSession={userSession} />
+                        </CardContent>
                     </Card>
                 </div>
             </div>

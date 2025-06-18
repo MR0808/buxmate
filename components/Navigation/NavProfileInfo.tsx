@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { ChevronDown, CircleHelp, Cog } from 'lucide-react';
 
@@ -12,20 +14,22 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import NavSignOutButton from '@/components/Navigation/NavSignOutButton';
-import { NavProps } from '@/types/nav';
+import { useSession } from '@/lib/auth-client';
 
-const NavProfileInfo = async ({ session }: NavProps) => {
-    if (!session) return null;
+const NavProfileInfo = () => {
+    const { data: userSession, refetch } = useSession();
+
+    if (!userSession) return null;
 
     return (
         <div className="md:block hidden">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild className=" cursor-pointer">
                     <div className=" flex items-center gap-3  text-default-800 ">
-                        {session.user.image ? (
+                        {userSession.user.image ? (
                             <Image
-                                src={session.user.image}
-                                alt={`${session.user.name} ${session.user.lastName}`}
+                                src={userSession.user.image}
+                                alt={`${userSession.user.name} ${userSession.user.lastName}`}
                                 width={36}
                                 height={36}
                                 className="rounded-full"
@@ -33,12 +37,12 @@ const NavProfileInfo = async ({ session }: NavProps) => {
                         ) : (
                             <div className="size-9 border border-priamry rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                                 <span className="uppercase text-base font-bold">
-                                    {`${session.user.name.slice(0, 1)}${session.user.lastName.slice(0, 1)}`}
+                                    {`${userSession.user.name.slice(0, 1)}${userSession.user.lastName.slice(0, 1)}`}
                                 </span>
                             </div>
                         )}
                         <div className="text-sm font-medium  capitalize lg:block hidden  ">
-                            {`${session.user.name} ${session.user.lastName}`}
+                            {`${userSession.user.name} ${userSession.user.lastName}`}
                         </div>
                         <span className="text-base  me-2.5 lg:inline-block hidden">
                             <ChevronDown />
@@ -47,10 +51,10 @@ const NavProfileInfo = async ({ session }: NavProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 p-0" align="end">
                     <DropdownMenuLabel className="flex gap-2 items-center mb-1 p-3">
-                        {session.user.image ? (
+                        {userSession.user.image ? (
                             <Image
-                                src={session.user.image}
-                                alt={`${session.user.name} ${session.user.lastName}`}
+                                src={userSession.user.image}
+                                alt={`${userSession.user.name} ${userSession.user.lastName}`}
                                 width={36}
                                 height={36}
                                 className="rounded-full"
@@ -58,16 +62,16 @@ const NavProfileInfo = async ({ session }: NavProps) => {
                         ) : (
                             <div className="size-9 border border-priamry rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                                 <span className="uppercase text-base font-bold">
-                                    {`${session.user.name.slice(0, 1)}${session.user.lastName.slice(0, 1)}`}
+                                    {`${userSession.user.name.slice(0, 1)}${userSession.user.lastName.slice(0, 1)}`}
                                 </span>
                             </div>
                         )}
                         <div>
                             <div className="text-sm font-medium text-default-800 capitalize ">
-                                {`${session.user.name} ${session.user.lastName}`}
+                                {`${userSession.user.name} ${userSession.user.lastName}`}
                             </div>
                             <div className="text-xs text-default-600 hover:text-primary">
-                                {session.user.email}
+                                {userSession.user.email}
                             </div>
                         </div>
                     </DropdownMenuLabel>
