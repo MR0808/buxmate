@@ -1,9 +1,9 @@
-import { forwardRef } from "react";
+import { forwardRef } from 'react';
 
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 type FormInputProps = {
     name: string;
@@ -56,7 +56,7 @@ export const AccountFormInput = forwardRef<HTMLInputElement, FormInputProps>(
                 type={type}
                 placeholder={placeholder}
                 {...props}
-                className={cn("h-12 rounded-xl px-6 py-3 text-sm font-normal")}
+                className={cn('h-12 rounded-xl px-6 py-3 text-sm font-normal')}
             />
         );
     }
@@ -71,7 +71,7 @@ export const AddFormInput = forwardRef<HTMLInputElement, FormInputProps>(
                 placeholder={placeholder}
                 {...props}
                 className={cn(
-                    "block h-14 w-full rounded-lg border-neutral-200 bg-white px-5"
+                    'block h-14 w-full rounded-lg border-neutral-200 bg-white px-5'
                 )}
             />
         );
@@ -96,20 +96,20 @@ export const AddFormSliderInput = forwardRef<
             value={value}
             onChange={onChange}
             className={cn(
-                "block h-14 w-24 rounded-lg border-neutral-200 bg-white px-5"
+                'block h-14 w-24 rounded-lg border-neutral-200 bg-white px-5'
             )}
         />
     );
 });
 
 export const AddFormTextArea = forwardRef<HTMLInputElement, FormInputProps>(
-    function AddFormTextArea({ name, placeholder = "", ...props }, ref) {
+    function AddFormTextArea({ name, placeholder = '', ...props }, ref) {
         return (
             <Textarea
                 name={name}
                 {...props}
                 className={cn(
-                    "block h-28 w-full rounded-lg border-neutral-200 bg-white p-5"
+                    'block h-28 w-full rounded-lg border-neutral-200 bg-white p-5'
                 )}
                 placeholder={placeholder}
             />

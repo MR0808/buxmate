@@ -56,10 +56,12 @@ model User {
   posts       Post[]
   gender      Gender?
   dateOfBirth DateTime?
-  country     Country?  @relation(fields: [countryId], references: [id])
+  country     Country?    @relation(fields: [countryId], references: [id])
   countryId   String?
-  state       State?    @relation(fields: [stateId], references: [id])
+  state       State?      @relation(fields: [stateId], references: [id])
   stateId     String?
+  otpRecords  OtpRecord[]
+  auditLogs   AuditLog[]
 
   @@map("users")
 }
@@ -112,6 +114,46 @@ model Verification {
   expiresAt  DateTime
 
   @@map("verifications")
+}
+
+model OtpRecord {
+  id        String   @id @default(cuid())
+  email     String // current email
+  newEmail  String   @map("new_email") // new email to verify
+  otp       String
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otpRecords")
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., 'email_change:user_id'
+  count     Int      @default(0)
+  resetTime DateTime @map("reset_time")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("rateLimits")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auditLogs")
 }
 
 model Country {

@@ -58,6 +58,16 @@ const options = {
         }
     },
     user: {
+        changeEmail: {
+            enabled: true,
+            sendChangeEmailVerification: async (
+                { user, newEmail, url, token },
+                request
+            ) => {
+                console.log(url);
+                await sendVerificationEmail({ email: newEmail, link: url });
+            }
+        },
         additionalFields: {
             lastName: {
                 type: 'string',

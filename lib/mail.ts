@@ -13,12 +13,30 @@ export const sendVerificationEmail = async ({
     email: string;
     link: string;
 }) => {
+    console.log(link);
     await resend.emails.send({
         from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
         to: email,
         subject: 'Buxmate - Confirm your email',
         html: `<p>Click <a href="${link}">here</a> to confirm email.</p>`
     });
+};
+
+export const sendEmailVerificationOtpEmail = async ({
+    email,
+    otp
+}: {
+    email: string;
+    otp: string;
+}) => {
+    const sent = await resend.emails.send({
+        from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
+        to: email,
+        subject: `Buxmate - Email Verification - ${otp}`,
+        html: `<p>Your email verification code is ${otp}.</p>`
+    });
+
+    return sent;
 };
 
 export const sendResetEmail = async ({
