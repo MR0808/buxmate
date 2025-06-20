@@ -28,7 +28,11 @@ const EmailForm = ({ userSession }: SessionProps) => {
                     >
                         Edit
                     </div>
-                    <EmailDialog open={open} setOpen={setOpen} />
+                    <EmailDialog
+                        open={open}
+                        setOpen={setOpen}
+                        initialEmail={user?.email}
+                    />
                 </div>
                 <div
                     className={`${!user?.email && 'italic'} text-base font-normal`}

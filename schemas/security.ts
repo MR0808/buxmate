@@ -16,12 +16,7 @@ export const VerifyOtpSchema = z.object({
     newEmail: z.string().email({
         message: 'Email must be valid'
     }),
-    otp: z
-        .string()
-        .min(6, {
-            message: 'Verification code must be 6 characters long'
-        })
-        .max(6, {
-            message: 'Verification code must be 6 characters long'
-        })
+    otp: z.string().length(6, {
+        message: 'Verification code must be 6 characters long'
+    })
 });

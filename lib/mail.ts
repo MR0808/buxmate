@@ -13,7 +13,6 @@ export const sendVerificationEmail = async ({
     email: string;
     link: string;
 }) => {
-    console.log(link);
     await resend.emails.send({
         from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
         to: email,
