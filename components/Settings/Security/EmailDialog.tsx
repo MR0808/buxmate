@@ -2,15 +2,10 @@
 
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { useState, useEffect, useTransition } from 'react';
+import { useForm, SubmitErrorHandler } from 'react-hook-form';
+import { useState, useTransition } from 'react';
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
     Form,
     FormControl,
@@ -20,8 +15,6 @@ import {
 } from '@/components/ui/form';
 import { SubmitButton } from '@/components/Form/Buttons';
 import { AccountFormInput } from '@/components/Form/FormInput';
-import FormError from '@/components/Form/FormError';
-import FormSuccess from '@/components/Form/FormSuccess';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
     InputOTP,
@@ -29,49 +22,48 @@ import {
     InputOTPSlot
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Mail, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Mail, Clock, AlertCircle } from 'lucide-react';
 import { EmailDialogProps } from '@/types/security';
 import { cn } from '@/lib/utils';
 import { ChangeEmailSchema, VerifyOtpSchema } from '@/schemas/security';
 import { requestOTP, verifyOTP } from '@/actions/email';
 import maskEmail from '@/utils/maskEmail';
+import { authClient } from '@/lib/auth-client';
 
 type Step = 'input' | 'verify' | 'success';
 
 const EmailDialog = ({
     open,
     setOpen,
-    initialEmail = 'user@example.com'
+    initialEmail = 'user@example.com',
+    refetch
 }: EmailDialogProps) => {
-    const [step, setStep] = useState<Step>('verify');
+    const [step, setStep] = useState<Step>('input');
     const [error, setError] = useState({ error: false, message: '' });
     const [currentEmail] = useState(initialEmail);
     const [newEmail, setNewEmail] = useState('');
     const [maskedEmail, setMaskedEmail] = useState('');
-    const [otp, setOtp] = useState('');
     const [cooldownTime, setCooldownTime] = useState(0);
     const [isPendingInput, startTransitionInput] = useTransition();
     const [isPendingVerify, startTransitionVerify] = useTransition();
-
-    const otpPending = false;
 
     const handleOpenChange = (newState: boolean) => {
         setOpen(newState);
         if (!newState) {
             setStep('input');
             setNewEmail('');
-            setOtp('');
             setMaskedEmail('');
             setCooldownTime(0);
+            setError({ error: false, message: '' });
         }
     };
 
     const handleStartOver = () => {
         setStep('input');
         setNewEmail('');
-        setOtp('');
         setMaskedEmail('');
         setCooldownTime(0);
+        setError({ error: false, message: '' });
     };
 
     const formInput = useForm<z.infer<typeof ChangeEmailSchema>>({
@@ -104,11 +96,19 @@ const EmailDialog = ({
                 clearInterval(interval);
             }
             if (data.success) {
+                formVerify.setValue('newEmail', values.newEmail);
+                setError({ error: false, message: '' });
                 setStep('verify');
                 setNewEmail(values.newEmail);
                 setMaskedEmail(maskEmail(values.newEmail));
             }
         });
+    };
+
+    const onErrorInput: SubmitErrorHandler<
+        z.infer<typeof ChangeEmailSchema>
+    > = (errors) => {
+        setError({ error: true, message: errors.newEmail?.message || '' });
     };
 
     const formVerify = useForm<z.infer<typeof VerifyOtpSchema>>({
@@ -123,28 +123,26 @@ const EmailDialog = ({
     const onSubmitVerify = (values: z.infer<typeof VerifyOtpSchema>) => {
         startTransitionVerify(async () => {
             const data = await verifyOTP(values);
-            // if (!data.success) {
-            //     setError({ error: true, message: data.message });
-            // }
-            // if (data.cooldownTime) {
-            //     setCooldownTime(data.cooldownTime);
-            //     const interval = setInterval(() => {
-            //         setCooldownTime((prev) => {
-            //             if (prev <= 1) {
-            //                 clearInterval(interval);
-            //                 return 0;
-            //             }
-            //             return prev - 1;
-            //         });
-            //     }, 1000);
-            //     clearInterval(interval);
-            // }
-            // if (data.success) {
-            //     setStep('verify');
-            //     setNewEmail(values.newEmail);
-            //     setMaskedEmail(maskEmail(values.newEmail));
-            // }
+            if (!data.success) {
+                setError({ error: true, message: data.message });
+            }
+            if (data.success) {
+                await authClient.getSession({
+                    query: {
+                        disableCookieCache: true
+                    }
+                });
+                refetch();
+                setError({ error: false, message: '' });
+                setStep('success');
+            }
         });
+    };
+
+    const onErrorVerify: SubmitErrorHandler<z.infer<typeof VerifyOtpSchema>> = (
+        errors
+    ) => {
+        setError({ error: true, message: errors.newEmail?.message || '' });
     };
 
     return (
@@ -188,15 +186,11 @@ const EmailDialog = ({
                                 <form
                                     className="space-y-4"
                                     onSubmit={formInput.handleSubmit(
-                                        onSubmitInput
+                                        onSubmitInput,
+                                        onErrorInput
                                     )}
+                                    noValidate
                                 >
-                                    <input
-                                        type="hidden"
-                                        name="currentEmail"
-                                        value={currentEmail}
-                                    />
-
                                     <div className="space-y-2">
                                         <FormField
                                             control={formInput.control}
@@ -255,26 +249,29 @@ const EmailDialog = ({
                                 </p>
                             </div>
 
-                            {/* {otpState?.success && (
-                    <Alert>
-                        <CheckCircle className="h-4 w-4" />
-                        <AlertDescription>{otpState.message}</AlertDescription>
-                    </Alert>
-                )} */}
+                            {!error.error && (
+                                <Alert className="items-center">
+                                    <CheckCircle className="h-4 w-4" />
+                                    <AlertDescription>
+                                        OTP sent successfully! Check your email.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
 
-                            {/* {verifyState && !verifyState.success && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>
-                            {verifyState.message}
-                        </AlertDescription>
-                    </Alert>
-                )} */}
+                            {error.error && (
+                                <Alert variant="destructive">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertDescription>
+                                        {error.message}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             <Form {...formVerify}>
                                 <form
                                     className="space-y-4"
                                     onSubmit={formVerify.handleSubmit(
-                                        onSubmitVerify
+                                        onSubmitVerify,
+                                        onErrorVerify
                                     )}
                                 >
                                     <div className="space-y-2">
@@ -351,17 +348,38 @@ const EmailDialog = ({
                             </Form>
                             <div className="text-center">
                                 <p className="text-sm text-gray-500">
-                                    Code expires in 15 minutes
+                                    Code expires in 10 minutes
                                 </p>
                             </div>
                         </div>
                     </>
                 )}
+                {step === 'success' && (
+                    <div className="text-center space-y-4">
+                        <div className="flex justify-center">
+                            <CheckCircle className="h-16 w-16 text-green-500" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-green-700">
+                                Email Updated!
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-2">
+                                Your email has been successfully changed to{' '}
+                                <span className="font-medium">{newEmail}</span>
+                            </p>
+                        </div>
+                        <Button
+                            onClick={() => handleOpenChange(false)}
+                            variant="outline"
+                            className="w-full"
+                        >
+                            Close
+                        </Button>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );
 };
-
-const InputContent = () => {};
 
 export default EmailDialog;

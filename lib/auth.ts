@@ -100,6 +100,11 @@ const options = {
             maxAge: 5 * 60
         }
     },
+    account: {
+        accountLinking: {
+            enabled: false
+        }
+    },
     plugins: [
         nextCookies(),
         admin({

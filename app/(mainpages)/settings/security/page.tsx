@@ -3,6 +3,7 @@ import { authCheck } from '@/lib/authCheck';
 import SiteBreadcrumb from '@/components/Global/SiteBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import EmailForm from '@/components/Settings/Security/EmailForm';
+import PasswordForm from '@/components/Settings/Security/PasswordForm';
 
 const PersonalSettingsPage = async () => {
     const userSession = await authCheck();
@@ -22,6 +23,7 @@ const PersonalSettingsPage = async () => {
                         <CardContent>
                             <div className="flex flex-col w-full ">
                                 <EmailForm userSession={userSession} />
+                                <PasswordForm userSession={userSession} />
                             </div>
                         </CardContent>
                     </Card>

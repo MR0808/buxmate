@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 
-import NavMain from '@/components/Navigation/NavMain';
 import { ThemeProvider } from '@/providers/theme-provider';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,6 +19,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning={true}>
+            <head>
+                <meta name="apple-mobile-web-app-title" content="Buxmate" />
+            </head>
             <body
                 className={`${inter.className}`}
                 suppressHydrationWarning={true}

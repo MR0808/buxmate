@@ -1,7 +1,6 @@
 'use server';
 
 import * as z from 'zod';
-import { revalidatePath } from 'next/cache';
 
 import { db } from '@/lib/database';
 import { ActionResult } from '@/types/global';
@@ -13,7 +12,7 @@ import { sendEmailVerificationOtpEmail } from '@/lib/mail';
 import { AuditLogDetails } from '@/types/audit';
 
 const RATE_LIMIT_MAX_ATTEMPTS = 3;
-const OTP_EXPIRY = 10 * 60 * 1000; // 15 minutes
+const OTP_EXPIRY = 10 * 60 * 1000; // 10 minutes
 
 export const requestOTP = async (
     values: z.infer<typeof ChangeEmailSchema>
@@ -258,9 +257,6 @@ export async function verifyOTP(
             ipAddress,
             userAgent
         });
-
-        // Revalidate any cached data
-        revalidatePath('/');
 
         return {
             success: true,

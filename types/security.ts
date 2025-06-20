@@ -4,4 +4,5 @@ export type EmailDialogProps = {
     open: boolean;
     setOpen: Dispatch<SetStateAction<boolean>>;
     initialEmail?: string;
+    refetch: () => void;
 };

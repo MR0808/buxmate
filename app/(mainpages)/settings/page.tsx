@@ -11,7 +11,11 @@ import { ArrowRight, Lock, Settings2, User } from 'lucide-react';
 import { authCheck } from '@/lib/authCheck';
 
 const settings = async () => {
-    const { user, session } = await authCheck();
+    const userSession = await authCheck();
+
+    const hasGoogleAccount = userSession.accounts.some(
+        (account) => account.providerId === 'google'
+    );
 
     return (
         <div>
@@ -43,32 +47,34 @@ const settings = async () => {
                         </Link>
                     </CardFooter>
                 </Card>
-                <Card>
-                    <CardHeader>
-                        <div className="flex gap-3 items-center">
-                            <div className="flex-none h-8 w-8 rounded-full bg-primary-500 text-default-300 flex flex-col items-center justify-center text-lg">
-                                <Lock />
+                {!hasGoogleAccount && (
+                    <Card>
+                        <CardHeader>
+                            <div className="flex gap-3 items-center">
+                                <div className="flex-none h-8 w-8 rounded-full bg-primary-500 text-default-300 flex flex-col items-center justify-center text-lg">
+                                    <Lock />
+                                </div>
+                                <div className="flex-1 text-base text-default-900  font-medium">
+                                    Security Settings
+                                </div>
                             </div>
-                            <div className="flex-1 text-base text-default-900  font-medium">
-                                Security Settings
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-default-600  text-sm">
+                                Update your email, password and add two factor
+                                authentication
                             </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-default-600  text-sm">
-                            Update your email, password and add two factor
-                            authentication
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Link
-                            href="/settings/security"
-                            className="inline-flex items-center gap-3 text-sm capitalize font-medium text-default-600 "
-                        >
-                            <span>Change Settings</span> <ArrowRight />
-                        </Link>
-                    </CardFooter>
-                </Card>
+                        </CardContent>
+                        <CardFooter>
+                            <Link
+                                href="/settings/security"
+                                className="inline-flex items-center gap-3 text-sm capitalize font-medium text-default-600 "
+                            >
+                                <span>Change Settings</span> <ArrowRight />
+                            </Link>
+                        </CardFooter>
+                    </Card>
+                )}
                 <Card>
                     <CardHeader>
                         <div className="flex gap-3 items-center">

@@ -57,6 +57,7 @@ export const AccountFormInput = forwardRef<HTMLInputElement, FormInputProps>(
                 placeholder={placeholder}
                 {...props}
                 className={cn('h-12 rounded-xl px-6 py-3 text-sm font-normal')}
+                formNoValidate={true}
             />
         );
     }

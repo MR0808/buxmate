@@ -32,6 +32,7 @@ const EmailForm = ({ userSession }: SessionProps) => {
                         open={open}
                         setOpen={setOpen}
                         initialEmail={user?.email}
+                        refetch={refetch}
                     />
                 </div>
                 <div
