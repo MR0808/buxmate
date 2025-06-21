@@ -7,6 +7,8 @@ import { APIError } from 'better-auth/api';
 import { redirect } from 'next/navigation';
 
 import { LoginSchema } from '@/schemas/auth';
+import { logUserLogin } from '@/actions/audit/audit-auth';
+import { prisma } from '@/lib/prisma';
 
 export const login = async (values: z.infer<typeof LoginSchema>) => {
     const validatedFields = LoginSchema.safeParse(values);
@@ -17,13 +19,18 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 
     const { email, password, rememberMe } = validatedFields.data;
     try {
-        await auth.api.signInEmail({
+        const data = await auth.api.signInEmail({
             headers: await headers(),
             body: {
                 email,
                 password,
                 rememberMe
             }
+        });
+
+        await logUserLogin(data.user.id, {
+            loginMethod: 'email',
+            rememberMe
         });
 
         return { error: null };
@@ -40,5 +47,23 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
         }
 
         return { error: 'Internal Server Error' };
+    }
+};
+
+export const getUserIdfromToken = async (token: string) => {
+    console.log('token', token);
+    try {
+        const data = await prisma.verification.findFirst({
+            where: { identifier: `reset-password:${token}` }
+        });
+        console.log('data', data);
+
+        if (!data) {
+            return { data: null, error: true };
+        }
+
+        return { data: data.value, error: false };
+    } catch (error) {
+        return { data: null, error: true };
     }
 };

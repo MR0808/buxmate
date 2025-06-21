@@ -143,17 +143,27 @@ model RateLimit {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String
-  details   Json?
-  ipAddress String?  @map("ip_address")
-  userAgent String?  @map("user_agent")
-  createdAt DateTime @default(now()) @map("created_at")
+  id          Int      @id @default(autoincrement())
+  userId      String?  @map("user_id")
+  action      String
+  category    String
+  description String?
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  metadata    Json     @default("{}")
+  sessionId   String?  @map("session_id")
+  createdAt   DateTime @default(now()) @map("created_at")
 
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@map("auditLogs")
+  // Indexes for better query performance
+  @@index([userId])
+  @@index([action])
+  @@index([category])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("audit_logs")
 }
 
 model Country {

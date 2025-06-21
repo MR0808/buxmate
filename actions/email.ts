@@ -6,10 +6,9 @@ import { db } from '@/lib/database';
 import { ActionResult } from '@/types/global';
 import { ChangeEmailSchema, VerifyOtpSchema } from '@/schemas/security';
 import { authCheckServer } from '@/lib/authCheck';
-import { calculateCooldownSeconds, getClientInfo } from '@/utils/ratelimit';
+import { calculateCooldownSeconds } from '@/utils/ratelimit';
 import { generateOTP } from '@/utils/otp';
 import { sendEmailVerificationOtpEmail } from '@/lib/mail';
-import { AuditLogDetails } from '@/types/audit';
 
 const RATE_LIMIT_MAX_ATTEMPTS = 3;
 const OTP_EXPIRY = 10 * 60 * 1000; // 10 minutes
@@ -109,20 +108,6 @@ export const requestOTP = async (
         }
 
         // Audit log
-        const { ipAddress, userAgent } = await getClientInfo();
-        const auditDetails: AuditLogDetails = {
-            currentEmail,
-            newEmail,
-            otpSent: true
-        };
-
-        await db.auditLogs.create({
-            userId: user.id,
-            action: 'email_change_otp_requested',
-            details: auditDetails,
-            ipAddress,
-            userAgent
-        });
 
         return {
             success: true,
@@ -191,20 +176,6 @@ export async function verifyOTP(
             const remainingAttempts = 3 - (otpRecord.attempts + 1);
 
             // Audit log for failed attempt
-            const { ipAddress, userAgent } = await getClientInfo();
-            const auditDetails: AuditLogDetails = {
-                currentEmail,
-                newEmail,
-                remainingAttempts
-            };
-
-            await db.auditLogs.create({
-                userId: user.id,
-                action: 'email_change_otp_failed',
-                details: auditDetails,
-                ipAddress,
-                userAgent
-            });
 
             if (remainingAttempts <= 0) {
                 await db.otpRecords.deleteByUserId(user.id);
@@ -243,20 +214,6 @@ export async function verifyOTP(
         await db.otpRecords.deleteByUserId(user.id);
 
         // Audit log for successful change
-        const { ipAddress, userAgent } = await getClientInfo();
-        const auditDetails: AuditLogDetails = {
-            oldEmail: currentEmail,
-            newEmail,
-            verificationMethod: 'otp'
-        };
-
-        await db.auditLogs.create({
-            userId: user.id,
-            action: 'email_changed',
-            details: auditDetails,
-            ipAddress,
-            userAgent
-        });
 
         return {
             success: true,

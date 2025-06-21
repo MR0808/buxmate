@@ -139,38 +139,5 @@ export const db = {
                 }
             });
         }
-    },
-
-    auditLogs: {
-        create: async (
-            data: Prisma.AuditLogUncheckedCreateInput
-        ): Promise<AuditLog> => {
-            return await prisma.auditLog.create({
-                data
-            });
-        },
-
-        findByUserId: async (
-            userId: string,
-            limit = 10
-        ): Promise<AuditLog[]> => {
-            return await prisma.auditLog.findMany({
-                where: { userId },
-                orderBy: { createdAt: 'desc' },
-                take: limit
-            });
-        },
-
-        cleanup: async (daysToKeep = 90): Promise<void> => {
-            await prisma.auditLog.deleteMany({
-                where: {
-                    createdAt: {
-                        lt: new Date(
-                            Date.now() - daysToKeep * 24 * 60 * 60 * 1000
-                        )
-                    }
-                }
-            });
-        }
     }
 };

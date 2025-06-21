@@ -1,4 +1,5 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import { createAuthMiddleware } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
 import { UserRole, Gender } from '@/generated/prisma';
@@ -8,6 +9,12 @@ import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
 import { sendVerificationEmail, sendResetEmail } from '@/lib/mail';
 import { ac, roles } from '@/lib/permissions';
+import {
+    logEmailVerified,
+    logEmailVerifyRequested,
+    logPasswordResetCompleted,
+    logPasswordResetRequested
+} from '@/actions/audit/audit-auth';
 
 const options = {
     database: prismaAdapter(prisma, {
@@ -36,7 +43,8 @@ const options = {
         sendResetPassword: async ({ user, url }) => {
             await sendResetEmail({
                 email: user.email,
-                link: url
+                link: url,
+                name: user.name
             });
         }
     },
@@ -44,13 +52,28 @@ const options = {
         sendOnSignUp: true,
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url }) => {
+            await logEmailVerifyRequested(user.id, user.email);
             const link = new URL(url);
-            link.searchParams.set('callbackURL', '/auth/verify');
+            link.searchParams.set('callbackURL', '/auth/login');
             await sendVerificationEmail({
                 email: user.email,
                 link: String(link)
             });
         }
+    },
+    hooks: {
+        after: createAuthMiddleware(async (ctx) => {
+            const newSession = ctx.context.newSession;
+            if (ctx.path === '/verify-email') {
+                if (newSession)
+                    await logEmailVerified(
+                        newSession.user.id,
+                        newSession.user.email
+                    );
+            } else if (ctx.path === '/forget-password') {
+                await logPasswordResetRequested(ctx.body.email);
+            }
+        })
     },
     advanced: {
         database: {

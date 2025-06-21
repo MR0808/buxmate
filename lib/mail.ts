@@ -2,9 +2,9 @@
 
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { ResetPasswordEmailTemplate } from '@/emails/reset-password';
 
-const domain = process.env.NEXT_PUBLIC_APP_URL;
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendVerificationEmail = async ({
     email,
@@ -38,17 +38,47 @@ export const sendEmailVerificationOtpEmail = async ({
     return sent;
 };
 
+// export const sendResetEmail = async ({
+//     email,
+//     link
+// }: {
+//     email: string;
+//     link: string;
+// }) => {
+//     await resend.emails.send({
+//         from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
+//         to: email,
+//         subject: 'Buxmate - Reset password',
+//         html: `<p>Click <a href="${link}">here</a> to reset password.</p>`
+//     });
+// };
+
 export const sendResetEmail = async ({
     email,
-    link
+    link,
+    name
 }: {
     email: string;
     link: string;
+    name: string;
 }) => {
     await resend.emails.send({
         from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
         to: email,
         subject: 'Buxmate - Reset password',
-        html: `<p>Click <a href="${link}">here</a> to reset password.</p>`
+        react: ResetPasswordEmailTemplate({ name, link })
+    });
+};
+
+export const sendPasswordResetNotificationEmail = async ({
+    email
+}: {
+    email: string;
+}) => {
+    await resend.emails.send({
+        from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
+        to: email,
+        subject: 'Buxmate - Your password has been reset',
+        html: `<p>Your password has been reset</p>`
     });
 };

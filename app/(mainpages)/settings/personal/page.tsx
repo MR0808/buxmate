@@ -57,6 +57,7 @@ const PersonalSettingsPage = async () => {
                                     genderProp={
                                         userSession.user.gender || undefined
                                     }
+                                    userSession={userSession}
                                 />
                                 <LocationForm
                                     countryProp={country || defaultCountry!}
@@ -64,11 +65,13 @@ const PersonalSettingsPage = async () => {
                                     countries={countries!}
                                     states={states!}
                                     initialValueProp={initialValueProp}
+                                    userSession={userSession}
                                 />
                                 <DateOfBirthForm
                                     dateOfBirthProp={
                                         user.dateOfBirth || undefined
                                     }
+                                    userSession={userSession}
                                 />
                             </div>
                         </CardContent>

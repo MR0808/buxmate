@@ -30,8 +30,12 @@ import FormError from '@/components/Form/FormError';
 import { DateOfBirthSchema } from '@/schemas/personal';
 import { DateOfBirthProps } from '@/types/personal';
 import { cn } from '@/lib/utils';
+import { logPersonalUpdated } from '@/actions/audit/audit-personal';
 
-const DateOfBirthForm = ({ dateOfBirthProp }: DateOfBirthProps) => {
+const DateOfBirthForm = ({
+    dateOfBirthProp,
+    userSession
+}: DateOfBirthProps) => {
     const { refetch } = useSession();
     const [edit, setEdit] = useState(false);
     const [error, setError] = useState<string | undefined>();
@@ -65,8 +69,19 @@ const DateOfBirthForm = ({ dateOfBirthProp }: DateOfBirthProps) => {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
-                    onSuccess: () => {
+                    onSuccess: async (ctx) => {
                         setDate(values.dateOfBirth);
+                        if (userSession)
+                            await logPersonalUpdated(
+                                userSession?.user.id,
+                                'user.dateofbirth_updated',
+                                ['dateofbirth'],
+                                {
+                                    updatedFields: {
+                                        dateofbirth: values.dateOfBirth
+                                    }
+                                }
+                            );
                         refetch();
                         setEdit(false);
                         toast.success('Date of birth successfully updated');

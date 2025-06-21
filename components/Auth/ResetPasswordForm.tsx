@@ -4,7 +4,7 @@ import { useForm, SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { useTransition, useState } from 'react';
+import { useTransition } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -19,7 +19,9 @@ import {
     SubmitButton
 } from '@/components/Form/FormInputAuth';
 import { ResetPasswordSchema } from '@/schemas/auth';
-import { resetPassword, updateUser } from '@/lib/auth-client';
+import { resetPassword } from '@/lib/auth-client';
+import { getUserIdfromToken } from '@/actions/login';
+import { logPasswordResetCompleted } from '@/actions/audit/audit-auth';
 
 const ResetPasswordForm = ({ token }: { token: string }) => {
     const [isPending, startTransition] = useTransition();
@@ -35,6 +37,7 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
 
     const onSubmit = (values: z.infer<typeof ResetPasswordSchema>) => {
         startTransition(async () => {
+            const data = await getUserIdfromToken(token);
             await resetPassword({
                 newPassword: values.password,
                 token,
@@ -42,9 +45,13 @@ const ResetPasswordForm = ({ token }: { token: string }) => {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
-                    onSuccess: () => {
+                    onSuccess: async () => {
                         toast.dismiss();
                         toast.success('Password reset successfully.');
+                        if (data.data)
+                            await logPasswordResetCompleted(data.data, {
+                                resetToken: token // You might want to hash this or just store a reference
+                            });
                         router.push('/auth/login');
                     }
                 }

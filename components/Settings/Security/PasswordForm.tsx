@@ -11,10 +11,11 @@ import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { SubmitButton } from '@/components/Form/Buttons';
 import { AccountFormInput } from '@/components/Form/FormInput';
 import FormError from '@/components/Form/FormError';
-import { ResetPasswordSchema } from '@/schemas/auth';
+import { UpdatePasswordSchema } from '@/schemas/security';
 import { cn } from '@/lib/utils';
 import { useSession, authClient } from '@/lib/auth-client';
 import { SessionProps } from '@/types/session';
+import { sendPasswordResetNotificationEmail } from '@/lib/mail';
 
 const PasswordForm = ({ userSession }: SessionProps) => {
     const { refetch } = useSession();
@@ -22,8 +23,8 @@ const PasswordForm = ({ userSession }: SessionProps) => {
     const [error, setError] = useState<string | undefined>();
     const [isPending, startTransition] = useTransition();
 
-    const form = useForm<z.infer<typeof ResetPasswordSchema>>({
-        resolver: zodResolver(ResetPasswordSchema),
+    const form = useForm<z.infer<typeof UpdatePasswordSchema>>({
+        resolver: zodResolver(UpdatePasswordSchema),
         defaultValues: {
             currentPassword: '',
             password: '',
@@ -37,7 +38,7 @@ const PasswordForm = ({ userSession }: SessionProps) => {
         setError(undefined);
     };
 
-    const onSubmit = (values: z.infer<typeof ResetPasswordSchema>) => {
+    const onSubmit = (values: z.infer<typeof UpdatePasswordSchema>) => {
         startTransition(async () => {
             await authClient.changePassword({
                 newPassword: values.password,
@@ -48,20 +49,25 @@ const PasswordForm = ({ userSession }: SessionProps) => {
                         toast.dismiss();
                         toast.error('Current password is incorrect');
                     },
-                    onSuccess: () => {
+                    onSuccess: async () => {
+                        if (userSession?.user.email)
+                            await sendPasswordResetNotificationEmail({
+                                email: userSession.user.email
+                            });
                         toast.dismiss();
                         refetch();
                         setEdit(false);
                         toast.success('Password successfully updated');
                         form.reset(values);
                         // Create password change email
+                        // Create audit log - for all actions
                     }
                 }
             });
         });
     };
 
-    const onError: SubmitErrorHandler<z.infer<typeof ResetPasswordSchema>> = (
+    const onError: SubmitErrorHandler<z.infer<typeof UpdatePasswordSchema>> = (
         errors
     ) => {
         const errorMessages = Object.entries(errors).map(([field, error]) => (

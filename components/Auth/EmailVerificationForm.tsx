@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { SubmitButton } from '@/components/Form/FormInputAuth';
 import { EmailSchema } from '@/schemas/auth';
 import { sendVerificationEmail } from '@/lib/auth-client';
+import { logEmailVerifyRequested } from '@/actions/audit/audit-auth';
 
 const EmailVerificationForm = () => {
     const [success, setSuccess] = useState(false);
@@ -39,7 +40,7 @@ const EmailVerificationForm = () => {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
-                    onSuccess: () => {
+                    onSuccess: async () => {
                         setSuccess(true);
                         toast.success('Verification email sent successfully!');
                     }

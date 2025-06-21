@@ -39,7 +39,7 @@ const ForgotPasswordForm = () => {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
-                    onSuccess: () => {
+                    onSuccess: async () => {
                         setSuccess(true);
                         toast.success(
                             'Reset password email sent successfully!'
