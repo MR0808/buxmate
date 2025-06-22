@@ -29,6 +29,7 @@ import { ChangeEmailSchema, VerifyOtpSchema } from '@/schemas/security';
 import { requestOTP, verifyOTP } from '@/actions/email';
 import maskEmail from '@/utils/maskEmail';
 import { authClient } from '@/lib/auth-client';
+import { logEmailUpdated } from '@/actions/audit/audit-security';
 
 type Step = 'input' | 'verify' | 'success';
 
@@ -36,9 +37,11 @@ const EmailDialog = ({
     open,
     setOpen,
     initialEmail = 'user@example.com',
-    refetch
+    refetch,
+    userSession
 }: EmailDialogProps) => {
     const [step, setStep] = useState<Step>('input');
+    const [user, setUser] = useState(userSession?.user);
     const [error, setError] = useState({ error: false, message: '' });
     const [currentEmail] = useState(initialEmail);
     const [newEmail, setNewEmail] = useState('');
@@ -127,6 +130,12 @@ const EmailDialog = ({
                 setError({ error: true, message: data.message });
             }
             if (data.success) {
+                if (user && user.id)
+                    await logEmailUpdated(
+                        user.id,
+                        values.currentEmail,
+                        values.newEmail
+                    );
                 await authClient.getSession({
                     query: {
                         disableCookieCache: true

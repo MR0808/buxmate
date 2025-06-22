@@ -42,13 +42,15 @@ import {
     getStatesByCountry
 } from '@/lib/location';
 import { authClient, useSession } from '@/lib/auth-client';
+import { logPersonalUpdated } from '@/actions/audit/audit-personal';
 
 const LocationForm = ({
     stateProp,
     countryProp,
     countries,
     states,
-    initialValueProp
+    initialValueProp,
+    userSession
 }: LocationProps) => {
     const { refetch } = useSession();
     const [edit, setEdit] = useState(false);
@@ -110,6 +112,18 @@ const LocationForm = ({
                         setCountry(countryDb!);
                         setState(stateDb!);
                         setInitialValue(true);
+                        if (userSession)
+                            await logPersonalUpdated(
+                                userSession?.user.id,
+                                'user.location_updated',
+                                ['state', 'country'],
+                                {
+                                    updatedFields: {
+                                        state: stateDb,
+                                        country: countryDb
+                                    }
+                                }
+                            );
                         refetch();
                         setEdit(false);
                         toast.success('Location successfully updated');

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useSession, authClient } from '@/lib/auth-client';
 import { SessionProps } from '@/types/session';
 import { sendPasswordResetNotificationEmail } from '@/lib/mail';
+import { logPasswordChanged } from '@/actions/audit/audit-security';
 
 const PasswordForm = ({ userSession }: SessionProps) => {
     const { refetch } = useSession();
@@ -50,10 +51,12 @@ const PasswordForm = ({ userSession }: SessionProps) => {
                         toast.error('Current password is incorrect');
                     },
                     onSuccess: async () => {
-                        if (userSession?.user.email)
+                        if (userSession && userSession.user) {
                             await sendPasswordResetNotificationEmail({
                                 email: userSession.user.email
                             });
+                            await logPasswordChanged(userSession.user.id);
+                        }
                         toast.dismiss();
                         refetch();
                         setEdit(false);

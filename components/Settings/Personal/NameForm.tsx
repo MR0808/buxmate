@@ -21,6 +21,7 @@ import FormError from '@/components/Form/FormError';
 import { NameSchema } from '@/schemas/personal';
 import { cn } from '@/lib/utils';
 import { SessionProps } from '@/types/session';
+import { logPersonalUpdated } from '@/actions/audit/audit-personal';
 
 const NameForm = ({ userSession }: SessionProps) => {
     const { data: currentUser, refetch } = useSession();
@@ -59,8 +60,20 @@ const NameForm = ({ userSession }: SessionProps) => {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
-                    onSuccess: () => {
+                    onSuccess: async () => {
                         refetch();
+                        if (user && user.id)
+                            await logPersonalUpdated(
+                                user.id,
+                                'user.name_updated',
+                                ['name', 'firstName'],
+                                {
+                                    updatedFields: {
+                                        name: values.name,
+                                        lastName: values.lastName
+                                    }
+                                }
+                            );
                         setEdit(false);
                         toast.success('Name successfully updated');
                         form.reset(values);

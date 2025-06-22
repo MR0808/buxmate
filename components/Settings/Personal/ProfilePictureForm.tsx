@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { ProfileButton } from '@/components/Form/Buttons';
 import { SessionProps } from '@/types/session';
 import { uploadImage, deleteImage } from '@/utils/supabase';
+import { logPersonalUpdated } from '@/actions/audit/audit-personal';
 
 const ProfilePictureForm = ({ userSession }: SessionProps) => {
     const { data: currentUser, refetch } = useSession();
@@ -77,8 +78,19 @@ const ProfilePictureForm = ({ userSession }: SessionProps) => {
                     onError: (ctx) => {
                         toast.error(ctx.error.message);
                     },
-                    onSuccess: () => {
+                    onSuccess: async () => {
                         refetch();
+                        if (user && user.id)
+                            await logPersonalUpdated(
+                                user.id,
+                                'user.picture_updated',
+                                ['image'],
+                                {
+                                    updatedFields: {
+                                        image: image.publicUrl
+                                    }
+                                }
+                            );
                         toast.success('Profile picture successfully updated');
                         form.reset(values);
                     }
