@@ -25,7 +25,10 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Mail, Clock, AlertCircle } from 'lucide-react';
 import { EmailDialogProps } from '@/types/security';
 import { cn } from '@/lib/utils';
-import { ChangeEmailSchema, VerifyOtpSchema } from '@/schemas/security';
+import {
+    ChangeEmailSchema,
+    VerifyEmailChangeOTPSchema
+} from '@/schemas/security';
 import { sendEmailChangeOTP, verifyEmailChangeOTP } from '@/actions/email';
 import maskEmail from '@/utils/maskEmail';
 import { authClient } from '@/lib/auth-client';
@@ -114,8 +117,8 @@ const EmailDialog = ({
         setError({ error: true, message: errors.newEmail?.message || '' });
     };
 
-    const formVerify = useForm<z.infer<typeof VerifyOtpSchema>>({
-        resolver: zodResolver(VerifyOtpSchema),
+    const formVerify = useForm<z.infer<typeof VerifyEmailChangeOTPSchema>>({
+        resolver: zodResolver(VerifyEmailChangeOTPSchema),
         defaultValues: {
             currentEmail,
             newEmail,
@@ -123,7 +126,9 @@ const EmailDialog = ({
         }
     });
 
-    const onSubmitVerify = (values: z.infer<typeof VerifyOtpSchema>) => {
+    const onSubmitVerify = (
+        values: z.infer<typeof VerifyEmailChangeOTPSchema>
+    ) => {
         startTransitionVerify(async () => {
             const data = await verifyEmailChangeOTP(values);
             if (!data.success) {
@@ -148,9 +153,9 @@ const EmailDialog = ({
         });
     };
 
-    const onErrorVerify: SubmitErrorHandler<z.infer<typeof VerifyOtpSchema>> = (
-        errors
-    ) => {
+    const onErrorVerify: SubmitErrorHandler<
+        z.infer<typeof VerifyEmailChangeOTPSchema>
+    > = (errors) => {
         setError({ error: true, message: errors.newEmail?.message || '' });
     };
 

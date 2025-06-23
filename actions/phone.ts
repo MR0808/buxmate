@@ -1,6 +1,7 @@
 'use server';
 
 import * as z from 'zod';
+import { User } from '@/generated/prisma';
 
 import { db } from '@/lib/database';
 import { ActionResult } from '@/types/global';
@@ -48,16 +49,26 @@ export const sendPhoneChangeOTP = async (
             };
         }
 
-        // Find user by current email
-        const user = await db.users.findByPhoneNumber(currentPhoneNumber);
-        if (!user) {
-            return {
-                success: false,
-                message: 'User not found'
-            };
+        let user: User | null;
+        if (currentPhoneNumber) {
+            user = await db.users.findByPhoneNumber(currentPhoneNumber);
+            if (!user) {
+                return {
+                    success: false,
+                    message: 'User not found'
+                };
+            }
+        } else {
+            user = await db.users.findById(userSession.user.id);
+            if (!user) {
+                return {
+                    success: false,
+                    message: 'User not found'
+                };
+            }
         }
 
-        // Check if new email is already taken
+        // Check if new phone number is already taken
         const existingUser = await db.users.findByPhoneNumber(newPhoneNumber);
         if (existingUser) {
             return {
@@ -93,7 +104,7 @@ export const sendPhoneChangeOTP = async (
         // Create new OTP record
         await db.phoneChangeRecords.create({
             userId: user.id,
-            phoneNumber: currentPhoneNumber,
+            phoneNumber: currentPhoneNumber || 'New number',
             newPhoneNumber,
             otp,
             expiresAt
@@ -128,19 +139,19 @@ export const sendPhoneChangeOTP = async (
     }
 };
 
-export const verifyPhoneChangeOTP = async (
+export async function verifyPhoneChangeOTP(
     values: z.infer<typeof VerifyPhoneChangeOTPSchema>
-): Promise<ActionResult> => {
-    try {
-        const userSession = await authCheckServer();
-        if (!userSession) {
-            return {
-                success: false,
-                message: 'Not authorised'
-            };
-        }
-        const user = userSession.user;
+): Promise<ActionResult> {
+    const userSession = await authCheckServer();
 
+    if (!userSession) {
+        return {
+            success: false,
+            message: 'Not authorised'
+        };
+    }
+
+    try {
         const validatedFields = VerifyPhoneChangeOTPSchema.safeParse(values);
 
         if (!validatedFields.success) {
@@ -150,65 +161,101 @@ export const verifyPhoneChangeOTP = async (
             };
         }
 
-        const { phoneNumber, otp } = validatedFields.data;
+        const { currentPhoneNumber, newPhoneNumber, otp } =
+            validatedFields.data;
 
-        // Find pending phone change
-        const pendingChange = await prisma.pendingPhoneChange.findFirst({
-            where: {
-                userId: user.id,
-                newPhone: phoneNumber,
-                otpCode: otp,
-                verified: false,
-                expiresAt: { gt: new Date() }
+        let user: User | null;
+        if (currentPhoneNumber) {
+            user = await db.users.findByPhoneNumber(currentPhoneNumber);
+            if (!user) {
+                return {
+                    success: false,
+                    message: 'User not found'
+                };
             }
-        });
+        } else {
+            user = await db.users.findById(userSession.user.id);
+            if (!user) {
+                return {
+                    success: false,
+                    message: 'User not found'
+                };
+            }
+        }
 
-        if (!pendingChange) {
+        // Find valid OTP record
+        const phoneChangeRecord = await db.phoneChangeRecords.findValid(
+            user.id,
+            newPhoneNumber
+        );
+        if (!phoneChangeRecord) {
             return {
                 success: false,
                 message: 'Invalid or expired verification code'
             };
         }
 
-        // Update user's phone number
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { phoneNumber: pendingChange.newPhone }
-        });
+        // Verify OTP
+        if (phoneChangeRecord.otp !== otp) {
+            // Increment attempts
+            await db.emailChangeRecords.incrementAttempts(phoneChangeRecord.id);
 
-        // Mark as verified and clean up
-        await prisma.pendingPhoneChange.delete({
-            where: { id: pendingChange.id }
-        });
+            const remainingAttempts = 3 - (phoneChangeRecord.attempts + 1);
 
-        return { success: true, message: 'Phone number updated successfully' };
-    } catch (error) {
-        console.error('Error verifying OTP:', error);
-        return {
-            success: false,
-            message: 'An error occurred while verifying the code'
-        };
-    }
-};
+            // Audit log for failed attempt
 
-export const cancelPhoneChange = async () => {
-    try {
-        const userSession = await authCheckServer();
-        if (!userSession) {
+            if (remainingAttempts <= 0) {
+                await db.phoneChangeRecords.deleteByUserId(user.id);
+                return {
+                    success: false,
+                    message:
+                        'Too many failed attempts. Please request a new code.'
+                };
+            }
+
             return {
                 success: false,
-                error: 'Not authorised'
+                message: `Invalid code. ${remainingAttempts} attempts remaining.`
             };
         }
-        const user = userSession.user;
 
-        await prisma.pendingPhoneChange.deleteMany({
-            where: { userId: user.id }
-        });
+        // Check if new email is still available
+        const existingUser = await db.users.findByPhoneNumber(newPhoneNumber);
+        if (existingUser && existingUser.id !== user.id) {
+            return {
+                success: false,
+                message: 'Phone number is no longer available'
+            };
+        }
 
-        return { success: true };
+        // Update user email
+        const updatedUser = await db.users.updatePhoneNumber(
+            user.id,
+            newPhoneNumber
+        );
+        if (!updatedUser) {
+            return {
+                success: false,
+                message: 'Failed to update phone number'
+            };
+        }
+
+        // Clean up OTP record
+        await db.phoneChangeRecords.deleteByUserId(user.id);
+
+        // Audit log for successful change
+
+        return {
+            success: true,
+            message: 'Phone number updated successfully!',
+            data: {
+                newPhoneNumber
+            }
+        };
     } catch (error) {
-        console.error('Error canceling phone change:', error);
-        return { success: false, error: 'An error occurred' };
+        return {
+            success: false,
+            message: 'Internal server error'
+        };
     }
-};
+}

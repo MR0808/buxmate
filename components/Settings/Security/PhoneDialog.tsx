@@ -4,6 +4,8 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, SubmitErrorHandler } from 'react-hook-form';
 import { useState, useTransition } from 'react';
+import { Country } from 'react-phone-number-input';
+import parsePhoneNumber, { PhoneNumber } from 'libphonenumber-js';
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
@@ -14,7 +16,7 @@ import {
     FormLabel
 } from '@/components/ui/form';
 import { SubmitButton } from '@/components/Form/Buttons';
-import { AccountFormInput } from '@/components/Form/FormInput';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
     InputOTP,
@@ -25,12 +27,11 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, Mail, Clock, AlertCircle } from 'lucide-react';
 import { PhoneDialogProps } from '@/types/security';
 import { cn } from '@/lib/utils';
-import { ChangePhoneSchema, VerifyOtpSchema } from '@/schemas/security';
 import {
-    sendPhoneChangeOTP,
-    verifyPhoneChangeOTP,
-    cancelPhoneChange
-} from '@/actions/phone';
+    ChangePhoneSchema,
+    VerifyPhoneChangeOTPSchema
+} from '@/schemas/security';
+import { sendPhoneChangeOTP, verifyPhoneChangeOTP } from '@/actions/phone';
 import { authClient } from '@/lib/auth-client';
 import { logPhoneUpdated } from '@/actions/audit/audit-security';
 
@@ -39,22 +40,30 @@ type Step = 'input' | 'verify' | 'success';
 const PhoneDialog = ({
     open,
     setOpen,
+    initialPhone,
     refetch,
-    userSession
+    userSession,
+    defaultCountry
 }: PhoneDialogProps) => {
     const [step, setStep] = useState<Step>('input');
     const [user, setUser] = useState(userSession?.user);
     const [error, setError] = useState({ error: false, message: '' });
-    const [phoneNumber, setPhoneNumber] = useState('');
+    const [currentPhoneNumber] = useState(initialPhone);
+    const [newPhoneNumber, setNewPhoneNumber] = useState('');
+    const [formattedNumber, setFormattedNumber] = useState<
+        PhoneNumber | undefined
+    >(undefined);
     const [cooldownTime, setCooldownTime] = useState(0);
     const [isPendingInput, startTransitionInput] = useTransition();
     const [isPendingVerify, startTransitionVerify] = useTransition();
+
+    if (!initialPhone) initialPhone = undefined;
 
     const handleOpenChange = (newState: boolean) => {
         setOpen(newState);
         if (!newState) {
             setStep('input');
-            setPhoneNumber('');
+            setNewPhoneNumber('');
             setCooldownTime(0);
             setError({ error: false, message: '' });
         }
@@ -62,7 +71,7 @@ const PhoneDialog = ({
 
     const handleStartOver = () => {
         setStep('input');
-        setPhoneNumber('');
+        setNewPhoneNumber('');
         setCooldownTime(0);
         setError({ error: false, message: '' });
     };
@@ -70,7 +79,8 @@ const PhoneDialog = ({
     const formInput = useForm<z.infer<typeof ChangePhoneSchema>>({
         resolver: zodResolver(ChangePhoneSchema),
         defaultValues: {
-            phoneNumber: ''
+            currentPhoneNumber: initialPhone,
+            newPhoneNumber: ''
         }
     });
 
@@ -96,42 +106,48 @@ const PhoneDialog = ({
                 clearInterval(interval);
             }
             if (data.success) {
-                formVerify.setValue('phoneNumber', values.phoneNumber);
+                formVerify.setValue('newPhoneNumber', values.newPhoneNumber);
                 setError({ error: false, message: '' });
                 setStep('verify');
-                setNewEmail(values.newEmail);
-                setMaskedEmail(maskEmail(values.newEmail));
+                setNewPhoneNumber(values.newPhoneNumber);
+                setFormattedNumber(parsePhoneNumber(values.newPhoneNumber));
             }
         });
     };
 
     const onErrorInput: SubmitErrorHandler<
-        z.infer<typeof ChangeEmailSchema>
+        z.infer<typeof ChangePhoneSchema>
     > = (errors) => {
-        setError({ error: true, message: errors.newEmail?.message || '' });
+        console.log('errors', errors);
+        setError({
+            error: true,
+            message: errors.newPhoneNumber?.message || ''
+        });
     };
 
-    const formVerify = useForm<z.infer<typeof VerifyOtpSchema>>({
-        resolver: zodResolver(VerifyOtpSchema),
+    const formVerify = useForm<z.infer<typeof VerifyPhoneChangeOTPSchema>>({
+        resolver: zodResolver(VerifyPhoneChangeOTPSchema),
         defaultValues: {
-            currentEmail,
-            newEmail,
+            currentPhoneNumber,
+            newPhoneNumber,
             otp: ''
         }
     });
 
-    const onSubmitVerify = (values: z.infer<typeof VerifyOtpSchema>) => {
+    const onSubmitVerify = (
+        values: z.infer<typeof VerifyPhoneChangeOTPSchema>
+    ) => {
         startTransitionVerify(async () => {
-            const data = await verifyOTP(values);
+            const data = await verifyPhoneChangeOTP(values);
             if (!data.success) {
                 setError({ error: true, message: data.message });
             }
             if (data.success) {
                 if (user && user.id)
-                    await logEmailUpdated(
+                    await logPhoneUpdated(
                         user.id,
-                        values.currentEmail,
-                        values.newEmail
+                        values.currentPhoneNumber || 'New Phone',
+                        values.newPhoneNumber
                     );
                 await authClient.getSession({
                     query: {
@@ -145,10 +161,13 @@ const PhoneDialog = ({
         });
     };
 
-    const onErrorVerify: SubmitErrorHandler<z.infer<typeof VerifyOtpSchema>> = (
-        errors
-    ) => {
-        setError({ error: true, message: errors.newEmail?.message || '' });
+    const onErrorVerify: SubmitErrorHandler<
+        z.infer<typeof VerifyPhoneChangeOTPSchema>
+    > = (errors) => {
+        setError({
+            error: true,
+            message: errors.newPhoneNumber?.message || ''
+        });
     };
 
     return (
@@ -159,15 +178,15 @@ const PhoneDialog = ({
                         <DialogTitle className="text-center">
                             <Mail className="h-12 w-12 text-blue-500 mx-auto mb-4" />
                             <div className="text-lg font-semibold">
-                                Change your email address
+                                Change your phone number
                             </div>
                         </DialogTitle>
                         <div className="space-y-9">
                             <div className="text-center">
                                 <p className="text-sm text-gray-600 mt-2">
-                                    Current email:{' '}
+                                    Current phone number:{' '}
                                     <span className="font-medium">
-                                        {currentEmail}
+                                        {currentPhoneNumber}
                                     </span>
                                 </p>
                             </div>
@@ -200,20 +219,21 @@ const PhoneDialog = ({
                                     <div className="space-y-2">
                                         <FormField
                                             control={formInput.control}
-                                            name="newEmail"
+                                            name="newPhoneNumber"
                                             render={({ field }) => (
                                                 <FormItem
                                                     className={cn('w-full')}
                                                 >
                                                     <FormLabel className="mb-6">
-                                                        New Email Address
+                                                        New Phone Number
                                                     </FormLabel>
                                                     <FormControl>
-                                                        <AccountFormInput
+                                                        <PhoneInput
                                                             {...field}
-                                                            name="newEmail"
-                                                            type="email"
-                                                            placeholder="Enter your new email address"
+                                                            defaultCountry={
+                                                                defaultCountry.isoCode as Country
+                                                            }
+                                                            placeholder="Enter a phone number"
                                                         />
                                                     </FormControl>
                                                 </FormItem>
@@ -245,7 +265,8 @@ const PhoneDialog = ({
                                 <p className="text-sm text-gray-600 mt-2">
                                     We sent a 6-digit code to{' '}
                                     <span className="font-medium">
-                                        {maskedEmail}
+                                        {formattedNumber &&
+                                            formattedNumber.formatNational()}
                                     </span>
                                 </p>
                             </div>
@@ -259,7 +280,8 @@ const PhoneDialog = ({
                                 <Alert className="items-center">
                                     <CheckCircle className="h-4 w-4" />
                                     <AlertDescription>
-                                        OTP sent successfully! Check your email.
+                                        OTP sent successfully! Check your phone
+                                        number.
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -371,7 +393,10 @@ const PhoneDialog = ({
                             </h3>
                             <p className="text-sm text-gray-600 mt-2">
                                 Your email has been successfully changed to{' '}
-                                <span className="font-medium">{newEmail}</span>
+                                <span className="font-medium">
+                                    {formattedNumber &&
+                                        formattedNumber.formatNational()}
+                                </span>
                             </p>
                         </div>
                         <Button

@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
+import { Country } from '@/generated/prisma';
 
 import { auth } from '@/lib/auth';
 import { LocationData } from '@/types/personal';
@@ -22,6 +23,13 @@ export type EmailDialogProps = {
 export type PhoneDialogProps = {
     open: boolean;
     setOpen: Dispatch<SetStateAction<boolean>>;
+    initialPhone?: string;
     refetch: () => void;
     userSession: SessionType | null;
+    defaultCountry: Country;
 };
+
+export interface PhoneNumberProps {
+    defaultCountry: Country;
+    userSession: SessionType | null;
+}

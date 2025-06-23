@@ -34,6 +34,7 @@
         "@supabase/supabase-js": "^2.50.0",
         "better-auth": "^1.2.9",
         "class-variance-authority": "^0.7.1",
+        "clicksend": "^5.0.79",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
         "country-state-city": "^3.2.1",

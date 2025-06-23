@@ -1,101 +1,53 @@
-// SMS service with proper ES6 imports
-import twilio from 'twilio';
+'use server';
 
-// For other providers, you can also use:
-// import { SNS } from '@aws-sdk/client-sns' // AWS SNS
-// import messagebird from 'messagebird' // MessageBird
-// import { Vonage } from '@vonage/server-sdk' // Vonage
-
-interface SMSResult {
-    success: boolean;
-    error?: string;
-    messageId?: string;
-}
+import * as ClickSend from 'clicksend';
 
 export async function sendSMS(
     phoneNumber: string,
-    message: string
-): Promise<SMSResult> {
+    message: string,
+    from?: string
+) {
     try {
-        // Twilio implementation
-        if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-            const client = twilio(
-                process.env.TWILIO_ACCOUNT_SID,
-                process.env.TWILIO_AUTH_TOKEN
+        if (process.env.CLICKSEND_USERNAME && process.env.CLICKSEND_API_KEY) {
+            // Create SMS message
+            const smsMessage = new ClickSend.SmsMessage();
+            smsMessage.to = phoneNumber;
+            smsMessage.body = message;
+            smsMessage.from = from || 'Buxmate';
+            smsMessage.source = 'nextjs-app';
+
+            const smsApi = new ClickSend.SMSApi(
+                process.env.CLICKSEND_USERNAME,
+                process.env.CLICKSEND_API_KEY
             );
 
-            const result = await client.messages.create({
-                body: message,
-                from: process.env.TWILIO_PHONE_NUMBER,
-                to: phoneNumber
+            // Create SMS collection
+            const smsCollection = new ClickSend.SmsMessageCollection();
+            smsCollection.messages = [smsMessage];
+
+            // Send SMS using Promise wrapper
+            const response = await new Promise((resolve, reject) => {
+                smsApi.smsSendPost(
+                    smsCollection,
+                    (error: any, data: any, response: any) => {
+                        if (error) {
+                            console.error('ClickSend API Error:', error);
+                            reject(error);
+                        } else {
+                            resolve(data);
+                        }
+                    }
+                );
             });
 
             return {
                 success: true,
-                messageId: result.sid
+                data: response,
+                message: 'SMS sent successfully!'
             };
         }
-
-        // AWS SNS implementation (alternative)
-        // if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-        //   const sns = new SNS({
-        //     region: process.env.AWS_REGION || 'us-east-1',
-        //     credentials: {
-        //       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        //       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        //     },
-        //   })
-
-        //   const result = await sns.publish({
-        //     PhoneNumber: phoneNumber,
-        //     Message: message,
-        //   })
-
-        //   return {
-        //     success: true,
-        //     messageId: result.MessageId
-        //   }
-        // }
-
-        // MessageBird implementation (alternative)
-        // if (process.env.MESSAGEBIRD_ACCESS_KEY) {
-        //   const messagebirdClient = messagebird(process.env.MESSAGEBIRD_ACCESS_KEY)
-        //
-        //   const result = await new Promise((resolve, reject) => {
-        //     messagebirdClient.messages.create({
-        //       originator: process.env.MESSAGEBIRD_ORIGINATOR || 'YourApp',
-        //       recipients: [phoneNumber],
-        //       body: message
-        //     }, (err: any, response: any) => {
-        //       if (err) reject(err)
-        //       else resolve(response)
-        //     })
-        //   })
-
-        //   return { success: true, messageId: (result as any).id }
-        // }
-
-        // Vonage implementation (alternative)
-        // if (process.env.VONAGE_API_KEY && process.env.VONAGE_API_SECRET) {
-        //   const vonage = new Vonage({
-        //     apiKey: process.env.VONAGE_API_KEY,
-        //     apiSecret: process.env.VONAGE_API_SECRET,
-        //   })
-
-        //   const result = await vonage.sms.send({
-        //     to: phoneNumber,
-        //     from: process.env.VONAGE_FROM_NUMBER || 'YourApp',
-        //     text: message,
-        //   })
-
-        //   return { success: true, messageId: result.messages[0]['message-id'] }
-        // }
-
-        // Fallback for development/testing
-        console.log(`SMS to ${phoneNumber}: ${message}`);
-        return { success: true, messageId: 'dev-' + Date.now() };
     } catch (error) {
-        console.error('SMS sending failed:', error);
+        console.error('SMS Error:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to send SMS'
@@ -103,20 +55,136 @@ export async function sendSMS(
     }
 }
 
-// Helper function to validate phone number format
-export function isValidPhoneNumber(phoneNumber: string): boolean {
-    // Basic E.164 format validation
-    const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    return phoneRegex.test(phoneNumber);
+export async function sendBulkSMS(
+    messages: Array<{ to: string; body: string; from?: string }>
+) {
+    try {
+        // Initialize the API client
+        const defaultClient = ClickSend.ApiClient.instance;
+        const basicAuth = defaultClient.authentications['BasicAuth'];
+        basicAuth.username = process.env.CLICKSEND_USERNAME!;
+        basicAuth.password = process.env.CLICKSEND_API_KEY!;
+
+        const smsApi = new ClickSend.SMSApi();
+
+        // Create SMS messages
+        const smsMessages = messages.map((msg) => {
+            const smsMessage = new ClickSend.SmsMessage();
+            smsMessage.to = msg.to;
+            smsMessage.body = msg.body;
+            smsMessage.from = msg.from || 'ClickSend';
+            smsMessage.source = 'nextjs-app';
+            return smsMessage;
+        });
+
+        const smsCollection = new ClickSend.SmsMessageCollection();
+        smsCollection.messages = smsMessages;
+
+        const response = await new Promise((resolve, reject) => {
+            smsApi.smsSendPost(
+                smsCollection,
+                (error: any, data: any, response: any) => {
+                    if (error) {
+                        console.error('ClickSend Bulk SMS Error:', error);
+                        reject(error);
+                    } else {
+                        resolve(data);
+                    }
+                }
+            );
+        });
+
+        return {
+            success: true,
+            data: response,
+            message: `Bulk SMS sent successfully! (${messages.length} messages)`
+        };
+    } catch (error) {
+        console.error('Bulk SMS Error:', error);
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to send bulk SMS'
+        };
+    }
 }
 
-// Helper function to format phone number for display
-export function formatPhoneForDisplay(phoneNumber: string): string {
-    // Remove + and format for display
-    const cleaned = phoneNumber.replace(/^\+/, '');
-    if (cleaned.length === 11 && cleaned.startsWith('1')) {
-        // US number format
-        return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+export async function getAccountBalance() {
+    try {
+        // Initialize the API client
+        const defaultClient = ClickSend.ApiClient.instance;
+        const basicAuth = defaultClient.authentications['BasicAuth'];
+        basicAuth.username = process.env.CLICKSEND_USERNAME!;
+        basicAuth.password = process.env.CLICKSEND_API_KEY!;
+
+        const accountApi = new ClickSend.AccountApi();
+
+        const response = await new Promise((resolve, reject) => {
+            accountApi.accountGet((error: any, data: any, response: any) => {
+                if (error) {
+                    console.error('ClickSend Account Error:', error);
+                    reject(error);
+                } else {
+                    resolve(data);
+                }
+            });
+        });
+
+        return {
+            success: true,
+            data: response
+        };
+    } catch (error) {
+        console.error('Account Balance Error:', error);
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to get account balance'
+        };
     }
-    return phoneNumber;
+}
+
+export async function getSMSHistory(page = 1, limit = 15) {
+    try {
+        // Initialize the API client
+        const defaultClient = ClickSend.ApiClient.instance;
+        const basicAuth = defaultClient.authentications['BasicAuth'];
+        basicAuth.username = process.env.CLICKSEND_USERNAME!;
+        basicAuth.password = process.env.CLICKSEND_API_KEY!;
+
+        const smsApi = new ClickSend.SMSApi();
+
+        const response = await new Promise((resolve, reject) => {
+            smsApi.smsHistoryGet(
+                page,
+                limit,
+                (error: any, data: any, response: any) => {
+                    if (error) {
+                        console.error('ClickSend History Error:', error);
+                        reject(error);
+                    } else {
+                        resolve(data);
+                    }
+                }
+            );
+        });
+
+        return {
+            success: true,
+            data: response
+        };
+    } catch (error) {
+        console.error('SMS History Error:', error);
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to get SMS history'
+        };
+    }
 }

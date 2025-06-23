@@ -9,11 +9,6 @@ export interface GenderProps {
     userSession: SessionType | null;
 }
 
-export interface PhoneNumberProps {
-    defaultCountry: Country;
-    userSession: SessionType | null;
-}
-
 export interface LocationProps {
     stateProp?: State;
     countryProp?: Country;

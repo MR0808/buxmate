@@ -136,7 +136,7 @@ model EmailChangeRecord {
 
 model PhoneChangeRecord {
   id             String   @id @default(cuid())
-  phoneNumber    String
+  phoneNumber    String?
   newPhoneNumber String
   otp            String
   expiresAt      DateTime @map("expires_at")

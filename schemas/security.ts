@@ -19,12 +19,13 @@ const phoneNumberSchema = z
     );
 
 export const ChangePhoneSchema = z.object({
-    currentPhoneNumber: phoneNumberSchema,
+    currentPhoneNumber: z.optional(phoneNumberSchema),
     newPhoneNumber: phoneNumberSchema
 });
 
 export const VerifyPhoneChangeOTPSchema = z.object({
-    phoneNumber: phoneNumberSchema,
+    currentPhoneNumber: z.optional(phoneNumberSchema),
+    newPhoneNumber: phoneNumberSchema,
     otp: z.string().length(6, {
         message: 'Verification code must be 6 characters long'
     })
@@ -39,7 +40,7 @@ export const ChangeEmailSchema = z.object({
     })
 });
 
-export const VerifyOtpSchema = z.object({
+export const VerifyEmailChangeOTPSchema = z.object({
     currentEmail: z.string().email({
         message: 'Email must be valid'
     }),

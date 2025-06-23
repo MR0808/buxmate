@@ -28,6 +28,12 @@ export type CreatePhoneChangeRecordInput = {
 
 export const db = {
     users: {
+        findById: async (id: string): Promise<User | null> => {
+            return await prisma.user.findUnique({
+                where: { id }
+            });
+        },
+
         findByEmail: async (email: string): Promise<User | null> => {
             return await prisma.user.findUnique({
                 where: { email }

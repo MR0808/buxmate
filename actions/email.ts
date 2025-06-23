@@ -4,7 +4,10 @@ import * as z from 'zod';
 
 import { db } from '@/lib/database';
 import { ActionResult } from '@/types/global';
-import { ChangeEmailSchema, VerifyOtpSchema } from '@/schemas/security';
+import {
+    ChangeEmailSchema,
+    VerifyEmailChangeOTPSchema
+} from '@/schemas/security';
 import { authCheckServer } from '@/lib/authCheck';
 import { calculateCooldownSeconds } from '@/utils/ratelimit';
 import { generateOTP } from '@/utils/otp';
@@ -126,7 +129,7 @@ export const sendEmailChangeOTP = async (
 };
 
 export async function verifyEmailChangeOTP(
-    values: z.infer<typeof VerifyOtpSchema>
+    values: z.infer<typeof VerifyEmailChangeOTPSchema>
 ): Promise<ActionResult> {
     const userSession = await authCheckServer();
 
@@ -138,7 +141,7 @@ export async function verifyEmailChangeOTP(
     }
 
     try {
-        const validatedFields = VerifyOtpSchema.safeParse(values);
+        const validatedFields = VerifyEmailChangeOTPSchema.safeParse(values);
 
         if (!validatedFields.success) {
             return {
@@ -225,7 +228,6 @@ export async function verifyEmailChangeOTP(
             }
         };
     } catch (error) {
-        console.error('Error verifying OTP:', error);
         return {
             success: false,
             message: 'Internal server error'
