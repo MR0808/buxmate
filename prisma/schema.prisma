@@ -51,19 +51,20 @@ model User {
   banReason     String?
   banExpires    DateTime?
 
-  sessions    Session[]
-  accounts    Account[]
-  posts       Post[]
-  gender      Gender?
-  dateOfBirth DateTime?
-  phoneNumber String?
-  timezone    String?
-  country     Country?    @relation(fields: [countryId], references: [id])
-  countryId   String?
-  state       State?      @relation(fields: [stateId], references: [id])
-  stateId     String?
-  otpRecords  OtpRecord[]
-  auditLogs   AuditLog[]
+  sessions           Session[]
+  accounts           Account[]
+  posts              Post[]
+  gender             Gender?
+  dateOfBirth        DateTime?
+  phoneNumber        String?             @unique
+  timezone           String?
+  country            Country?            @relation(fields: [countryId], references: [id])
+  countryId          String?
+  state              State?              @relation(fields: [stateId], references: [id])
+  stateId            String?
+  emailChangeRecords EmailChangeRecord[]
+  phoneChangeRecords PhoneChangeRecord[]
+  auditLogs          AuditLog[]
 
   @@map("users")
 }
@@ -118,7 +119,7 @@ model Verification {
   @@map("verifications")
 }
 
-model OtpRecord {
+model EmailChangeRecord {
   id        String   @id @default(cuid())
   email     String // current email
   newEmail  String   @map("new_email") // new email to verify
@@ -130,7 +131,24 @@ model OtpRecord {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("otpRecords")
+  @@map("emailChangeRecords")
+}
+
+model PhoneChangeRecord {
+  id             String   @id @default(cuid())
+  phoneNumber    String
+  newPhoneNumber String
+  otp            String
+  expiresAt      DateTime @map("expires_at")
+  attempts       Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([otp])
+  @@map("phoneChangeRecords")
 }
 
 model RateLimit {

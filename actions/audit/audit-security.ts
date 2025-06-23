@@ -31,6 +31,21 @@ export async function logEmailUpdated(
     });
 }
 
+export async function logPhoneUpdated(
+    userId: string,
+    oldPhone: string,
+    newPhone: string,
+    metadata?: Record<string, any>
+): Promise<AuditLogResult> {
+    return await logAuditEvent({
+        userId,
+        action: 'user.phone_updated',
+        category: 'security',
+        description: 'User updated their phone number',
+        metadata: { ...metadata, oldPhone, newPhone }
+    });
+}
+
 export async function logTwoFactorEnabled(
     userId: string,
     metadata?: Record<string, any>

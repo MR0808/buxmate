@@ -11,10 +11,11 @@ import {
     ShieldCheck,
     UserCircle
 } from 'lucide-react';
-import { SessionProps } from '@/types/session';
+import { SettingsProps } from '@/types/settings';
 import PersonalMain from '@/components/Settings/Personal/PersonalMain';
+import SecurityMain from '@/components/Settings/Security/SecurityMain';
 
-const SettingsMain = ({ userSession }: SessionProps) => {
+const SettingsMain = ({ userSession, location }: SettingsProps) => {
     const [tab, setTab] = useState('personal');
 
     return (
@@ -86,7 +87,12 @@ const SettingsMain = ({ userSession }: SessionProps) => {
                     </ul>
                 </CardContent>
             </Card>
-            {tab === 'personal' && <PersonalMain userSession={userSession} />}
+            {tab === 'personal' && (
+                <PersonalMain userSession={userSession} location={location} />
+            )}
+            {tab === 'security' && (
+                <SecurityMain userSession={userSession} location={location} />
+            )}
         </>
     );
 };

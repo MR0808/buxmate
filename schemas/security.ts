@@ -1,4 +1,34 @@
 import * as z from 'zod';
+import libphonenumber from 'google-libphonenumber';
+
+const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
+
+const phoneNumberSchema = z
+    .string()
+    .nonempty({ message: 'Mobile number is required' })
+    .refine(
+        (number) => {
+            try {
+                const phoneNumber = phoneUtil.parse(number);
+                return phoneUtil.isValidNumber(phoneNumber);
+            } catch (error) {
+                return false;
+            }
+        },
+        { message: 'Invalid mobile number' }
+    );
+
+export const ChangePhoneSchema = z.object({
+    currentPhoneNumber: phoneNumberSchema,
+    newPhoneNumber: phoneNumberSchema
+});
+
+export const VerifyPhoneChangeOTPSchema = z.object({
+    phoneNumber: phoneNumberSchema,
+    otp: z.string().length(6, {
+        message: 'Verification code must be 6 characters long'
+    })
+});
 
 export const ChangeEmailSchema = z.object({
     currentEmail: z.string().email({

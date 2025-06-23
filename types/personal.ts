@@ -9,6 +9,11 @@ export interface GenderProps {
     userSession: SessionType | null;
 }
 
+export interface PhoneNumberProps {
+    defaultCountry: Country;
+    userSession: SessionType | null;
+}
+
 export interface LocationProps {
     stateProp?: State;
     countryProp?: Country;
@@ -21,4 +26,13 @@ export interface LocationProps {
 export interface DateOfBirthProps {
     dateOfBirthProp?: Date;
     userSession: SessionType | null;
+}
+
+export interface LocationData {
+    countries: Country[] | null;
+    defaultCountry: Country;
+    states: State[] | null;
+    country: Country | null;
+    state: State | null;
+    initialValueProp: boolean;
 }

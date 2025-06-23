@@ -13,7 +13,7 @@ import { sendEmailVerificationOtpEmail } from '@/lib/mail';
 const RATE_LIMIT_MAX_ATTEMPTS = 3;
 const OTP_EXPIRY = 10 * 60 * 1000; // 10 minutes
 
-export const requestOTP = async (
+export const sendEmailChangeOTP = async (
     values: z.infer<typeof ChangeEmailSchema>
 ): Promise<ActionResult> => {
     const userSession = await authCheckServer();
@@ -83,11 +83,11 @@ export const requestOTP = async (
         const expiresAt = new Date(Date.now() + OTP_EXPIRY);
 
         // Clean up old OTP records
-        await db.otpRecords.cleanup();
-        await db.otpRecords.deleteByUserId(user.id);
+        await db.emailChangeRecords.cleanup();
+        await db.emailChangeRecords.deleteByUserId(user.id);
 
         // Create new OTP record
-        await db.otpRecords.create({
+        await db.emailChangeRecords.create({
             userId: user.id,
             email: currentEmail,
             newEmail,
@@ -118,7 +118,6 @@ export const requestOTP = async (
             }
         };
     } catch (error) {
-        console.error('Error requesting OTP:', error);
         return {
             success: false,
             message: 'Internal server error'
@@ -126,7 +125,7 @@ export const requestOTP = async (
     }
 };
 
-export async function verifyOTP(
+export async function verifyEmailChangeOTP(
     values: z.infer<typeof VerifyOtpSchema>
 ): Promise<ActionResult> {
     const userSession = await authCheckServer();
@@ -160,8 +159,11 @@ export async function verifyOTP(
         }
 
         // Find valid OTP record
-        const otpRecord = await db.otpRecords.findValid(user.id, newEmail);
-        if (!otpRecord) {
+        const emailChangeRecord = await db.emailChangeRecords.findValid(
+            user.id,
+            newEmail
+        );
+        if (!emailChangeRecord) {
             return {
                 success: false,
                 message: 'Invalid or expired verification code'
@@ -169,16 +171,16 @@ export async function verifyOTP(
         }
 
         // Verify OTP
-        if (otpRecord.otp !== otp) {
+        if (emailChangeRecord.otp !== otp) {
             // Increment attempts
-            await db.otpRecords.incrementAttempts(otpRecord.id);
+            await db.emailChangeRecords.incrementAttempts(emailChangeRecord.id);
 
-            const remainingAttempts = 3 - (otpRecord.attempts + 1);
+            const remainingAttempts = 3 - (emailChangeRecord.attempts + 1);
 
             // Audit log for failed attempt
 
             if (remainingAttempts <= 0) {
-                await db.otpRecords.deleteByUserId(user.id);
+                await db.emailChangeRecords.deleteByUserId(user.id);
                 return {
                     success: false,
                     message:
@@ -211,7 +213,7 @@ export async function verifyOTP(
         }
 
         // Clean up OTP record
-        await db.otpRecords.deleteByUserId(user.id);
+        await db.emailChangeRecords.deleteByUserId(user.id);
 
         // Audit log for successful change
 

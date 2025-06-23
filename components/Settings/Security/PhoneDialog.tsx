@@ -23,29 +23,29 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Mail, Clock, AlertCircle } from 'lucide-react';
-import { EmailDialogProps } from '@/types/security';
+import { PhoneDialogProps } from '@/types/security';
 import { cn } from '@/lib/utils';
-import { ChangeEmailSchema, VerifyOtpSchema } from '@/schemas/security';
-import { sendEmailChangeOTP, verifyEmailChangeOTP } from '@/actions/email';
-import maskEmail from '@/utils/maskEmail';
+import { ChangePhoneSchema, VerifyOtpSchema } from '@/schemas/security';
+import {
+    sendPhoneChangeOTP,
+    verifyPhoneChangeOTP,
+    cancelPhoneChange
+} from '@/actions/phone';
 import { authClient } from '@/lib/auth-client';
-import { logEmailUpdated } from '@/actions/audit/audit-security';
+import { logPhoneUpdated } from '@/actions/audit/audit-security';
 
 type Step = 'input' | 'verify' | 'success';
 
-const EmailDialog = ({
+const PhoneDialog = ({
     open,
     setOpen,
-    initialEmail = 'user@example.com',
     refetch,
     userSession
-}: EmailDialogProps) => {
+}: PhoneDialogProps) => {
     const [step, setStep] = useState<Step>('input');
     const [user, setUser] = useState(userSession?.user);
     const [error, setError] = useState({ error: false, message: '' });
-    const [currentEmail] = useState(initialEmail);
-    const [newEmail, setNewEmail] = useState('');
-    const [maskedEmail, setMaskedEmail] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [cooldownTime, setCooldownTime] = useState(0);
     const [isPendingInput, startTransitionInput] = useTransition();
     const [isPendingVerify, startTransitionVerify] = useTransition();
@@ -54,8 +54,7 @@ const EmailDialog = ({
         setOpen(newState);
         if (!newState) {
             setStep('input');
-            setNewEmail('');
-            setMaskedEmail('');
+            setPhoneNumber('');
             setCooldownTime(0);
             setError({ error: false, message: '' });
         }
@@ -63,23 +62,21 @@ const EmailDialog = ({
 
     const handleStartOver = () => {
         setStep('input');
-        setNewEmail('');
-        setMaskedEmail('');
+        setPhoneNumber('');
         setCooldownTime(0);
         setError({ error: false, message: '' });
     };
 
-    const formInput = useForm<z.infer<typeof ChangeEmailSchema>>({
-        resolver: zodResolver(ChangeEmailSchema),
+    const formInput = useForm<z.infer<typeof ChangePhoneSchema>>({
+        resolver: zodResolver(ChangePhoneSchema),
         defaultValues: {
-            currentEmail: initialEmail,
-            newEmail: ''
+            phoneNumber: ''
         }
     });
 
-    const onSubmitInput = (values: z.infer<typeof ChangeEmailSchema>) => {
+    const onSubmitInput = (values: z.infer<typeof ChangePhoneSchema>) => {
         startTransitionInput(async () => {
-            const data = await sendEmailChangeOTP(values);
+            const data = await sendPhoneChangeOTP(values);
             if (!data.success) {
                 setError({ error: true, message: data.message });
             }
@@ -99,7 +96,7 @@ const EmailDialog = ({
                 clearInterval(interval);
             }
             if (data.success) {
-                formVerify.setValue('newEmail', values.newEmail);
+                formVerify.setValue('phoneNumber', values.phoneNumber);
                 setError({ error: false, message: '' });
                 setStep('verify');
                 setNewEmail(values.newEmail);
@@ -125,7 +122,7 @@ const EmailDialog = ({
 
     const onSubmitVerify = (values: z.infer<typeof VerifyOtpSchema>) => {
         startTransitionVerify(async () => {
-            const data = await verifyEmailChangeOTP(values);
+            const data = await verifyOTP(values);
             if (!data.success) {
                 setError({ error: true, message: data.message });
             }
@@ -391,4 +388,4 @@ const EmailDialog = ({
     );
 };
 
-export default EmailDialog;
+export default PhoneDialog;

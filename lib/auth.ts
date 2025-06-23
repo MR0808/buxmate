@@ -3,7 +3,12 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
 import { UserRole, Gender } from '@/generated/prisma';
-import { admin, customSession, openAPI } from 'better-auth/plugins';
+import {
+    admin,
+    customSession,
+    openAPI,
+    phoneNumber
+} from 'better-auth/plugins';
 
 import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
@@ -111,6 +116,10 @@ const options = {
                 required: false
             },
             stateId: {
+                type: 'string',
+                required: false
+            },
+            phoneNumber: {
                 type: 'string',
                 required: false
             }

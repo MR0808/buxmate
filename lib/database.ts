@@ -1,18 +1,27 @@
 import { prisma } from '@/lib/prisma';
 import type {
     User,
-    OtpRecord,
+    EmailChangeRecord,
     RateLimit,
     AuditLog,
+    PhoneChangeRecord,
     Prisma
 } from '@/generated/prisma';
 
-export type { User, OtpRecord, RateLimit, AuditLog };
+export type { User, EmailChangeRecord, PhoneChangeRecord, RateLimit, AuditLog };
 
-export type CreateOtpRecordInput = {
+export type CreateEmailChangeRecordInput = {
     userId: string;
     email: string;
     newEmail: string;
+    otp: string;
+    expiresAt: Date;
+};
+
+export type CreatePhoneChangeRecordInput = {
+    userId: string;
+    phoneNumber: string;
+    newPhoneNumber: string;
     otp: string;
     expiresAt: Date;
 };
@@ -38,12 +47,37 @@ export const db = {
                 console.error('Error updating user email:', error);
                 return null;
             }
+        },
+
+        findByPhoneNumber: async (
+            phoneNumber: string
+        ): Promise<User | null> => {
+            return await prisma.user.findUnique({
+                where: { phoneNumber }
+            });
+        },
+
+        updatePhoneNumber: async (
+            userId: string,
+            newPhoneNumber: string
+        ): Promise<User | null> => {
+            try {
+                return await prisma.user.update({
+                    where: { id: userId },
+                    data: { phoneNumber: newPhoneNumber }
+                });
+            } catch (error) {
+                console.error('Error updating user phone number:', error);
+                return null;
+            }
         }
     },
 
-    otpRecords: {
-        create: async (data: CreateOtpRecordInput): Promise<OtpRecord> => {
-            return await prisma.otpRecord.create({
+    emailChangeRecords: {
+        create: async (
+            data: CreateEmailChangeRecordInput
+        ): Promise<EmailChangeRecord> => {
+            return await prisma.emailChangeRecord.create({
                 data
             });
         },
@@ -51,8 +85,8 @@ export const db = {
         findValid: async (
             userId: string,
             newEmail: string
-        ): Promise<OtpRecord | null> => {
-            return await prisma.otpRecord.findFirst({
+        ): Promise<EmailChangeRecord | null> => {
+            return await prisma.emailChangeRecord.findFirst({
                 where: {
                     userId,
                     newEmail,
@@ -66,8 +100,8 @@ export const db = {
             });
         },
 
-        incrementAttempts: async (id: string): Promise<OtpRecord> => {
-            return await prisma.otpRecord.update({
+        incrementAttempts: async (id: string): Promise<EmailChangeRecord> => {
+            return await prisma.emailChangeRecord.update({
                 where: { id },
                 data: {
                     attempts: {
@@ -78,13 +112,68 @@ export const db = {
         },
 
         deleteByUserId: async (userId: string): Promise<void> => {
-            await prisma.otpRecord.deleteMany({
+            await prisma.emailChangeRecord.deleteMany({
                 where: { userId }
             });
         },
 
         cleanup: async (): Promise<void> => {
-            await prisma.otpRecord.deleteMany({
+            await prisma.emailChangeRecord.deleteMany({
+                where: {
+                    expiresAt: {
+                        lte: new Date()
+                    }
+                }
+            });
+        }
+    },
+
+    phoneChangeRecords: {
+        create: async (
+            data: CreatePhoneChangeRecordInput
+        ): Promise<PhoneChangeRecord> => {
+            return await prisma.phoneChangeRecord.create({
+                data
+            });
+        },
+
+        findValid: async (
+            userId: string,
+            newPhoneNumber: string
+        ): Promise<PhoneChangeRecord | null> => {
+            return await prisma.phoneChangeRecord.findFirst({
+                where: {
+                    userId,
+                    newPhoneNumber,
+                    expiresAt: {
+                        gt: new Date()
+                    },
+                    attempts: {
+                        lt: 3
+                    }
+                }
+            });
+        },
+
+        incrementAttempts: async (id: string): Promise<PhoneChangeRecord> => {
+            return await prisma.phoneChangeRecord.update({
+                where: { id },
+                data: {
+                    attempts: {
+                        increment: 1
+                    }
+                }
+            });
+        },
+
+        deleteByUserId: async (userId: string): Promise<void> => {
+            await prisma.phoneChangeRecord.deleteMany({
+                where: { userId }
+            });
+        },
+
+        cleanup: async (): Promise<void> => {
+            await prisma.phoneChangeRecord.deleteMany({
                 where: {
                     expiresAt: {
                         lte: new Date()
