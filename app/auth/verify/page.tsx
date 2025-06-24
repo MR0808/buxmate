@@ -1,7 +1,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { redirect } from 'next/navigation';
 import EmailVerificationForm from '@/components/Auth/EmailVerificationForm';
+
+export async function generateMetadata() {
+    return {
+        title: 'Verification',
+        description: 'Buxmate Verification'
+    };
+}
 
 const VerifyPage = async ({
     searchParams

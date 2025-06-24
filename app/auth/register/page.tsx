@@ -4,6 +4,13 @@ import Image from 'next/image';
 import RegisterForm from '@/components/Auth/RegisterForm';
 import SocialLogin from '@/components/Auth/SocialLogin';
 
+export async function generateMetadata() {
+    return {
+        title: 'Register',
+        description: 'Buxmate Registration'
+    };
+}
+
 const RegisterPage = () => {
     return (
         <div

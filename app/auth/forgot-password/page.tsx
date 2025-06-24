@@ -3,6 +3,13 @@ import Image from 'next/image';
 
 import ForgotPasswordForm from '@/components/Auth/ForgotPasswordForm';
 
+export async function generateMetadata() {
+    return {
+        title: 'Forgot Password',
+        description: 'Buxmate Forgot Password'
+    };
+}
+
 const ForgotPasswordPage = () => {
     return (
         <>

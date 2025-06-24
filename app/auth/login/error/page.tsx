@@ -1,6 +1,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+export async function generateMetadata() {
+    return {
+        title: 'Login Error',
+        description: 'Buxmate Login'
+    };
+}
+
 const LoginErrorPage = async ({
     searchParams
 }: {

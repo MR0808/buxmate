@@ -57,7 +57,7 @@ model User {
   gender             Gender?
   dateOfBirth        DateTime?
   phoneNumber        String?             @unique
-  timezone           String?
+  timezone           String              @default("UTC")
   country            Country?            @relation(fields: [countryId], references: [id])
   countryId          String?
   state              State?              @relation(fields: [stateId], references: [id])

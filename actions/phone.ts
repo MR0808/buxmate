@@ -82,14 +82,14 @@ export const sendPhoneChangeOTP = async (
         const rateLimitKey = `phone_change:${user.id}`;
         const rateLimit = await db.rateLimits.get(rateLimitKey);
 
-        // if (rateLimit && rateLimit.count >= RATE_LIMIT_MAX_ATTEMPTS) {
-        //     const cooldownTime = calculateCooldownSeconds(rateLimit.resetTime);
-        //     return {
-        //         success: false,
-        //         message: 'Too many attempts. Please try again later.',
-        //         cooldownTime
-        //     };
-        // }
+        if (rateLimit && rateLimit.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+            const cooldownTime = calculateCooldownSeconds(rateLimit.resetTime);
+            return {
+                success: false,
+                message: 'Too many attempts. Please try again later.',
+                cooldownTime
+            };
+        }
 
         // Increment rate limit
         await db.rateLimits.increment(rateLimitKey);
@@ -116,17 +116,14 @@ export const sendPhoneChangeOTP = async (
             message: `Your verification code for Buxmate is: ${otp}. This code will expire in 10 minutes.`
         };
 
-        // const response = await sendSMS(smsMessage);
+        const response = await sendSingleSMSAction(smsMessage);
 
-        // const response = await sendSingleSMSAction(smsMessage);
-
-        // if (!response.messages) {
-        //     return {
-        //         success: false,
-        //         message: 'Failed to send verification message'
-        //     };
-        // }
-        console.log(otp);
+        if (!response.messages) {
+            return {
+                success: false,
+                message: 'Failed to send verification message'
+            };
+        }
 
         return {
             success: true,

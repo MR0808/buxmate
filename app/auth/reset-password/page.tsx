@@ -4,6 +4,13 @@ import { redirect } from 'next/navigation';
 
 import ResetPasswordForm from '@/components/Auth/ResetPasswordForm';
 
+export async function generateMetadata() {
+    return {
+        title: 'New Password',
+        description: 'Buxmate New Password'
+    };
+}
+
 const ResetPasswordPage = async ({
     searchParams
 }: {

@@ -4,6 +4,13 @@ import Image from 'next/image';
 import LoginForm from '@/components/Auth/LoginForm';
 import SocialLogin from '@/components/Auth/SocialLogin';
 
+export async function generateMetadata() {
+    return {
+        title: 'Login',
+        description: 'Buxmate Login'
+    };
+}
+
 const LoginPage = () => {
     return (
         <>

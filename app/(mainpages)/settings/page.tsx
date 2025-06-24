@@ -1,5 +1,6 @@
-import SiteBreadcrumb from '@/components/Global/SiteBreadcrumb';
+import type { Metadata } from 'next';
 
+import SiteBreadcrumb from '@/components/Global/SiteBreadcrumb';
 import { authCheck } from '@/lib/authCheck';
 import SettingsMain from '@/components/Settings/SettingsMain';
 import {
@@ -10,7 +11,38 @@ import {
     getCountryById
 } from '@/lib/location';
 
-const settings = async () => {
+import siteMetadata from '@/utils/siteMetaData';
+
+export function generateMetadata(): Metadata {
+    const title = 'Settings';
+    const description =
+        'Edit your personal details, as well as your security settings and other preferences.';
+    const images = [siteMetadata.siteLogo];
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            url: `${siteMetadata.siteUrl}/settings`,
+            siteName: siteMetadata.title,
+            locale: 'en_AU',
+            type: 'article',
+            publishedTime: '2024-08-15 13:00:00',
+            modifiedTime: '2024-08-15 13:00:00',
+            images,
+            authors: [siteMetadata.author]
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images
+        }
+    };
+}
+
+const SettingsPage = async () => {
     const userSession = await authCheck();
     const { user } = userSession;
 
@@ -47,4 +79,4 @@ const settings = async () => {
     );
 };
 
-export default settings;
+export default SettingsPage;
