@@ -9,7 +9,6 @@ export async function logPersonalUpdated(
     changes: string[],
     metadata?: Record<string, any>
 ): Promise<AuditLogResult> {
-    console.log(metadata);
     return await logAuditEvent({
         userId,
         action,

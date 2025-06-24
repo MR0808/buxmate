@@ -107,6 +107,8 @@ const PhoneDialog = ({
             }
             if (data.success) {
                 formVerify.setValue('newPhoneNumber', values.newPhoneNumber);
+                if (!values.currentPhoneNumber)
+                    formVerify.setValue('currentPhoneNumber', 'New number');
                 setError({ error: false, message: '' });
                 setStep('verify');
                 setNewPhoneNumber(values.newPhoneNumber);
@@ -118,7 +120,6 @@ const PhoneDialog = ({
     const onErrorInput: SubmitErrorHandler<
         z.infer<typeof ChangePhoneSchema>
     > = (errors) => {
-        console.log('errors', errors);
         setError({
             error: true,
             message: errors.newPhoneNumber?.message || ''
@@ -164,6 +165,8 @@ const PhoneDialog = ({
     const onErrorVerify: SubmitErrorHandler<
         z.infer<typeof VerifyPhoneChangeOTPSchema>
     > = (errors) => {
+        console.log(errors);
+        console.log('this', formVerify.getValues('currentPhoneNumber'));
         setError({
             error: true,
             message: errors.newPhoneNumber?.message || ''
@@ -389,10 +392,11 @@ const PhoneDialog = ({
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-green-700">
-                                Email Updated!
+                                Phone Number Updated!
                             </h3>
                             <p className="text-sm text-gray-600 mt-2">
-                                Your email has been successfully changed to{' '}
+                                Your phone number has been successfully changed
+                                to{' '}
                                 <span className="font-medium">
                                     {formattedNumber &&
                                         formattedNumber.formatNational()}

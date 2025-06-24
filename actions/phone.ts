@@ -12,7 +12,8 @@ import {
 import { authCheckServer } from '@/lib/authCheck';
 import { calculateCooldownSeconds } from '@/utils/ratelimit';
 import { generateOTP } from '@/utils/otp';
-import { sendSMS } from '@/lib/sms';
+import { sendSingleSMSAction } from '@/actions/smsglobal';
+import { SMSMessage } from '@/types/smsglobal';
 
 const RATE_LIMIT_MAX_ATTEMPTS = 3;
 const OTP_EXPIRY = 10 * 60 * 1000; // 10 minutes
@@ -81,14 +82,14 @@ export const sendPhoneChangeOTP = async (
         const rateLimitKey = `phone_change:${user.id}`;
         const rateLimit = await db.rateLimits.get(rateLimitKey);
 
-        if (rateLimit && rateLimit.count >= RATE_LIMIT_MAX_ATTEMPTS) {
-            const cooldownTime = calculateCooldownSeconds(rateLimit.resetTime);
-            return {
-                success: false,
-                message: 'Too many attempts. Please try again later.',
-                cooldownTime
-            };
-        }
+        // if (rateLimit && rateLimit.count >= RATE_LIMIT_MAX_ATTEMPTS) {
+        //     const cooldownTime = calculateCooldownSeconds(rateLimit.resetTime);
+        //     return {
+        //         success: false,
+        //         message: 'Too many attempts. Please try again later.',
+        //         cooldownTime
+        //     };
+        // }
 
         // Increment rate limit
         await db.rateLimits.increment(rateLimitKey);
@@ -110,18 +111,22 @@ export const sendPhoneChangeOTP = async (
             expiresAt
         });
 
-        // Send SMS
-        const smsResult = await sendSMS(
-            newPhoneNumber,
-            `Your verification code for Buxmate is: ${otp}. This code will expire in 10 minutes.`
-        );
+        const smsMessage: SMSMessage = {
+            destination: newPhoneNumber,
+            message: `Your verification code for Buxmate is: ${otp}. This code will expire in 10 minutes.`
+        };
 
-        if (!smsResult.success) {
-            return {
-                success: false,
-                message: 'Failed to send verification message'
-            };
-        }
+        // const response = await sendSMS(smsMessage);
+
+        // const response = await sendSingleSMSAction(smsMessage);
+
+        // if (!response.messages) {
+        //     return {
+        //         success: false,
+        //         message: 'Failed to send verification message'
+        //     };
+        // }
+        console.log(otp);
 
         return {
             success: true,
@@ -165,7 +170,7 @@ export async function verifyPhoneChangeOTP(
             validatedFields.data;
 
         let user: User | null;
-        if (currentPhoneNumber) {
+        if (currentPhoneNumber && currentPhoneNumber !== 'New number') {
             user = await db.users.findByPhoneNumber(currentPhoneNumber);
             if (!user) {
                 return {

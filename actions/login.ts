@@ -51,12 +51,10 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
 };
 
 export const getUserIdfromToken = async (token: string) => {
-    console.log('token', token);
     try {
         const data = await prisma.verification.findFirst({
             where: { identifier: `reset-password:${token}` }
         });
-        console.log('data', data);
 
         if (!data) {
             return { data: null, error: true };

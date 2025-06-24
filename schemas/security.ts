@@ -18,13 +18,18 @@ const phoneNumberSchema = z
         { message: 'Invalid mobile number' }
     );
 
+const currentPhoneNumberSchema = z.union([
+    phoneNumberSchema,
+    z.literal('New number')
+]);
+
 export const ChangePhoneSchema = z.object({
-    currentPhoneNumber: z.optional(phoneNumberSchema),
+    currentPhoneNumber: z.optional(currentPhoneNumberSchema),
     newPhoneNumber: phoneNumberSchema
 });
 
 export const VerifyPhoneChangeOTPSchema = z.object({
-    currentPhoneNumber: z.optional(phoneNumberSchema),
+    currentPhoneNumber: z.optional(currentPhoneNumberSchema),
     newPhoneNumber: phoneNumberSchema,
     otp: z.string().length(6, {
         message: 'Verification code must be 6 characters long'

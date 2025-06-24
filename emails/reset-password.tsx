@@ -24,7 +24,6 @@ export const ResetPasswordEmailTemplate = ({
     name,
     link
 }: ResetPasswordEmailTemplateProps) => {
-    console.log(baseUrl);
     return (
         <Html>
             <Head />
