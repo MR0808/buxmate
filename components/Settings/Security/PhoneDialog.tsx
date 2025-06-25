@@ -165,8 +165,6 @@ const PhoneDialog = ({
     const onErrorVerify: SubmitErrorHandler<
         z.infer<typeof VerifyPhoneChangeOTPSchema>
     > = (errors) => {
-        console.log(errors);
-        console.log('this', formVerify.getValues('currentPhoneNumber'));
         setError({
             error: true,
             message: errors.newPhoneNumber?.message || ''

@@ -28,6 +28,10 @@ enum Status {
   CLOSED
 }
 
+enum ImageType {
+  EVENT
+}
+
 model User {
   id        String   @id @default(uuid())
   createdAt DateTime
@@ -239,6 +243,19 @@ model Event {
   activities Activity[]
 
   @@map("events")
+}
+
+model Image {
+  id            String    @id @default(uuid())
+  image         String    @unique
+  imageName     String    @unique
+  imageType     ImageType
+  relatedEntity String?
+  bucket        String
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @updatedAt
+
+  @@map("images")
 }
 
 model Activity {

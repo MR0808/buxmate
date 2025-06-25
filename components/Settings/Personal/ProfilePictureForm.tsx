@@ -24,7 +24,7 @@ import profile from '@/public/images/assets/profile.jpg';
 import { Input } from '@/components/ui/input';
 import { ProfileButton } from '@/components/Form/Buttons';
 import { SessionProps } from '@/types/session';
-import { uploadImage, deleteImage } from '@/utils/supabase';
+import { uploadAvatar, deleteAvatar } from '@/actions/supabase';
 import { logPersonalUpdated } from '@/actions/audit/audit-personal';
 
 const ProfilePictureForm = ({ userSession }: SessionProps) => {
@@ -70,8 +70,15 @@ const ProfilePictureForm = ({ userSession }: SessionProps) => {
 
     const onSubmit = (values: z.infer<typeof ProfilePictureSchema>) => {
         startTransition(async () => {
-            const image = await uploadImage(values.image[0], 'avatars');
-            if (user?.image) await deleteImage(user?.image, 'avatars');
+            const formData = new FormData();
+            formData.append('image', values.image[0]);
+            formData.append('bucket', 'avatars');
+            const image = await uploadAvatar(formData);
+            if (user?.image)
+                await deleteAvatar({
+                    imageUrl: user?.image,
+                    bucket: 'avatars'
+                });
             await authClient.updateUser({
                 image: image.publicUrl,
                 fetchOptions: {

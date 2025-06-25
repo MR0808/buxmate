@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 
 import HomeMain from '@/components/Home/HomeMain';
 import { authCheck } from '@/lib/authCheck';
-
 import siteMetadata from '@/utils/siteMetaData';
 
 export function generateMetadata(): Metadata {

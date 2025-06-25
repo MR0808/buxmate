@@ -1,30 +1,21 @@
 'use client';
 
-import * as z from 'zod';
+import type * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useState, useTransition } from 'react';
 import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
     FormMessage
 } from '@/components/ui/form';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Card,
     CardContent,
@@ -32,10 +23,16 @@ import {
     CardHeader,
     CardTitle
 } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
 import { CreateEventSchema } from '@/schemas/event';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
+import ImageUploadField from '@/components/Event/Create/ImageUploadField';
+import type { AddEventProps } from '@/types/events';
+import DateField from '@/components/Event/Create/DateField';
+import LocationField from '@/components/Event/Create/LocationField';
+import CurrencyField from '@/components/Event/Create/CurrencyField';
+import StepIndicator from '@/components/Event/Create/StepIndicator';
+import TimezoneField from '@/components/Event/Create/TimezoneField';
+import Image from 'next/image';
 
 type FormData = z.infer<typeof CreateEventSchema>;
 
@@ -60,79 +57,19 @@ const steps = [
     }
 ];
 
-const StepIndicator = ({
-    currentStep,
-    totalSteps
-}: {
-    currentStep: number;
-    totalSteps: number;
-}) => {
-    return (
-        <div className="w-full mb-8">
-            <div className="flex items-center justify-between">
-                {Array.from({ length: totalSteps }, (_, index) => {
-                    const stepNumber = index + 1;
-                    const isCompleted = stepNumber < currentStep;
-                    const isCurrent = stepNumber === currentStep;
-                    const isUpcoming = stepNumber > currentStep;
-
-                    return (
-                        <div key={stepNumber} className="flex items-center">
-                            <div className="flex flex-col items-center">
-                                <div
-                                    className={`
-                      w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200
-                      ${
-                          isCompleted
-                              ? 'bg-green-500 text-white'
-                              : isCurrent
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-500'
-                      }
-                    `}
-                                >
-                                    {isCompleted ? (
-                                        <CheckCircle className="w-5 h-5" />
-                                    ) : (
-                                        stepNumber
-                                    )}
-                                </div>
-                                <div className="mt-2 text-xs text-center max-w-20">
-                                    <div
-                                        className={`font-medium ${isCurrent ? 'text-blue-600' : 'text-gray-500'}`}
-                                    >
-                                        Step {stepNumber}
-                                    </div>
-                                </div>
-                            </div>
-                            {index < totalSteps - 1 && (
-                                <div
-                                    className={`
-                      flex-1 h-0.5 mx-4 transition-all duration-200
-                      ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}
-                    `}
-                                />
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Progress bar */}
-            <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-in-out"
-                    style={{
-                        width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%`
-                    }}
-                />
-            </div>
-        </div>
-    );
-};
-
-const CreateEventForm = () => {
+const CreateEventForm = ({
+    currencies,
+    defaultCurrency,
+    countryProp,
+    countries,
+    states
+}: AddEventProps) => {
     const [currentStep, setCurrentStep] = useState(1);
+    const [url, setUrl] = useState('');
+    const [state, setState] = useState('');
+    const [country, setCountry] = useState('');
+    const [currency, setCurrency] = useState(defaultCurrency?.name || '');
+
     const [isPending, startTransition] = useTransition();
 
     const form = useForm<z.infer<typeof CreateEventSchema>>({
@@ -141,10 +78,11 @@ const CreateEventForm = () => {
             title: '',
             description: '',
             date: new Date(),
-            image: [],
+            image: '',
             state: '',
-            timezone: '',
-            currency: ''
+            country: countryProp?.id || '',
+            timezone: 'Australia/Melbourne',
+            currency: defaultCurrency?.id || ''
         }
     });
 
@@ -207,85 +145,46 @@ const CreateEventForm = () => {
             case 1:
                 return (
                     <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="title"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Title</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Description</FormLabel>
-                                        <FormControl>
-                                            <Textarea {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
                         <FormField
                             control={form.control}
-                            name="date"
+                            name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Date</FormLabel>
+                                    <FormLabel>Title</FormLabel>
                                     <FormControl>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant={'outline'}
-                                                        className={cn(
-                                                            'w-[240px] pl-3 text-left font-normal',
-                                                            !field.value &&
-                                                                'text-muted-foreground'
-                                                        )}
-                                                    >
-                                                        {field.value ? (
-                                                            format(
-                                                                field.value,
-                                                                'PPP'
-                                                            )
-                                                        ) : (
-                                                            <span>
-                                                                Pick a date
-                                                            </span>
-                                                        )}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent
-                                                className="w-auto p-0"
-                                                align="start"
-                                            >
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    disabled={(date) =>
-                                                        date > new Date() ||
-                                                        date <
-                                                            new Date(
-                                                                '1900-01-01'
-                                                            )
-                                                    }
-                                                    captionLayout="dropdown"
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                        <Textarea {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <DateField />
+                        <FormField
+                            control={form.control}
+                            name="image"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Event Image</FormLabel>
+                                    <FormControl>
+                                        <ImageUploadField
+                                            bucket="eventimages"
+                                            name="image"
+                                            setUrl={setUrl}
+                                            url={url}
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -297,47 +196,15 @@ const CreateEventForm = () => {
             case 2:
                 return (
                     <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="state"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>State</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                        <LocationField countries={countries} states={states} />
+                        <TimezoneField />
+                        <CurrencyField
+                            currencies={currencies}
+                            defaultCurrency={defaultCurrency}
+                            currentStep={currentStep}
+                            currency={currency}
+                            setCurrency={setCurrency}
                         />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="timezone"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Timezone</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="currency"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Currency</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
                     </div>
                 );
 
@@ -348,80 +215,71 @@ const CreateEventForm = () => {
                         <div className="grid gap-4">
                             <div>
                                 <h3 className="font-semibold text-lg mb-2">
-                                    Personal Information
+                                    Event Information
                                 </h3>
                                 <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                    {/* <p>
+                                    <p>
                                         <span className="font-medium">
-                                            Name:
+                                            Title:
                                         </span>{' '}
-                                        {formData.firstName} {formData.lastName}
+                                        {form.getValues('title')}
                                     </p>
                                     <p>
                                         <span className="font-medium">
-                                            Email:
+                                            Description:
                                         </span>{' '}
-                                        {formData.email}
+                                        {form.getValues('description')}
                                     </p>
                                     <p>
                                         <span className="font-medium">
-                                            Phone:
+                                            Date:
                                         </span>{' '}
-                                        {formData.phone}
-                                    </p> */}
+                                        {format(
+                                            form.getValues('date'),
+                                            'd MMMM, yyyy'
+                                        )}
+                                    </p>
+                                    <p>
+                                        <span className="font-medium">
+                                            Image:
+                                        </span>{' '}
+                                        <Image
+                                            src={
+                                                url ||
+                                                '/images/assets/profile.jpg'
+                                            }
+                                            alt={form.getValues('title')}
+                                            width={200}
+                                            height={200}
+                                        />
+                                    </p>
                                 </div>
                             </div>
 
                             <div>
                                 <h3 className="font-semibold text-lg mb-2">
-                                    Address Information
+                                    Logistical Information
                                 </h3>
-                                {/* <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                                     <p>
                                         <span className="font-medium">
-                                            Address:
+                                            Location:
                                         </span>{' '}
-                                        {formData.address}
+                                        {/* {formData.address} */}
                                     </p>
                                     <p>
                                         <span className="font-medium">
-                                            City:
+                                            Timezone:
                                         </span>{' '}
-                                        {formData.city}, {formData.postalCode}
+                                        {form.getValues('timezone')}
                                     </p>
                                     <p>
                                         <span className="font-medium">
-                                            Country:
+                                            Currency:
                                         </span>{' '}
-                                        {formData.country}
+                                        {currency}
                                     </p>
-                                </div> */}
-                            </div>
-
-                            <div>
-                                <h3 className="font-semibold text-lg mb-2">
-                                    Preferences
-                                </h3>
-                                {/* <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                                    <p>
-                                        <span className="font-medium">
-                                            Newsletter:
-                                        </span>{' '}
-                                        {formData.newsletter ? 'Yes' : 'No'}
-                                    </p>
-                                    <p>
-                                        <span className="font-medium">
-                                            Notifications:
-                                        </span>{' '}
-                                        {formData.notifications ? 'Yes' : 'No'}
-                                    </p>
-                                    <p>
-                                        <span className="font-medium">
-                                            Marketing:
-                                        </span>{' '}
-                                        {formData.marketing ? 'Yes' : 'No'}
-                                    </p>
-                                </div> */}
+                                </div>
                             </div>
                         </div>
                     </div>
