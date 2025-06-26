@@ -7,8 +7,8 @@ import Link from 'next/link';
 
 import { getEvent } from '@/actions/event';
 import { Button } from '@/components/ui/button';
-// import CreateProject from './create-project';
 import { cn } from '@/lib/utils';
+import CreateActivity from '@/components/Event/View/CreateActivity';
 
 type EventType = Awaited<ReturnType<typeof getEvent>>['data'];
 
@@ -24,7 +24,7 @@ const EventWrapper = ({
 
     return (
         <div>
-            {/* <CreateProject open={open} setOpen={setOpen} /> */}
+            <CreateActivity open={open} setOpen={setOpen} />
             <div className="flex w-full flex-wrap items-center gap-4 mb-6">
                 <h4 className="flex-1 font-medium lg:text-2xl text-xl capitalize text-default-900">
                     {event?.title}
@@ -32,7 +32,7 @@ const EventWrapper = ({
                 <div className="flex items-center gap-4 flex-wrap">
                     <Button className="flex-none" onClick={() => setOpen(true)}>
                         <Plus className="w-4 h-4 me-1" />
-                        <span>Add Project</span>
+                        <span>Add Activity</span>
                     </Button>
                 </div>
             </div>

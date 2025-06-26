@@ -158,7 +158,9 @@ export const getEvent = async (slug: string) => {
                         phoneNumber: true,
                         image: true
                     }
-                }
+                },
+                activities: { orderBy: { startTime: 'asc' } },
+                guests: { orderBy: { name: 'asc' } }
             }
         });
 
