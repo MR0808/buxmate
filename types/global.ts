@@ -27,3 +27,5 @@ export type ActionResult<T = any> = {
     data?: T;
     cooldownTime?: number;
 };
+
+export type ParamsSlug = Promise<{ slug: string }>;

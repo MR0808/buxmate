@@ -6,7 +6,8 @@ export type AuditCategory =
     | 'data'
     | 'system'
     | 'billing'
-    | 'admin';
+    | 'admin'
+    | 'event';
 
 export type AuditAction =
     // Authentication actions
@@ -56,7 +57,10 @@ export type AuditAction =
     | 'admin.user_deleted'
     | 'admin.user_suspended'
     | 'admin.role_assigned'
-    | 'admin.permission_granted';
+    | 'admin.permission_granted'
+
+    // Event actions
+    | 'event.event_created';
 
 export interface CreateAuditLogParams {
     userId?: string;

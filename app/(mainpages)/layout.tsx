@@ -9,7 +9,9 @@ export default async function RootLayout({
         <>
             <NavMain />
             <div className="min-h-screen bg-background">
-                <main className="flex-1 px-6 md:px-20 py-6">{children}</main>
+                <main className="flex-1 px-6 md:px-[264px] py-6">
+                    {children}
+                </main>
             </div>
         </>
     );

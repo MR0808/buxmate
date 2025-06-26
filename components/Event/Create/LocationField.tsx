@@ -10,8 +10,7 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-    FormMessage
+    FormLabel
 } from '@/components/ui/form';
 import {
     Command,
@@ -140,7 +139,6 @@ const LocationField = ({ countries, states }: LocationProps) => {
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <FormMessage />
                     </FormItem>
                 )}
             />
@@ -225,7 +223,6 @@ const LocationField = ({ countries, states }: LocationProps) => {
                                 </Command>
                             </PopoverContent>
                         </Popover>
-                        <FormMessage />
                     </FormItem>
                 )}
             />

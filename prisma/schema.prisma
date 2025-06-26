@@ -224,6 +224,7 @@ model Currency {
 
 model Event {
   id          String   @id @default(cuid())
+  slug        String   @unique
   date        DateTime
   title       String
   description String
@@ -246,7 +247,7 @@ model Event {
 }
 
 model Image {
-  id            String    @id @default(uuid())
+  id            String    @id @default(cuid())
   image         String    @unique
   imageName     String    @unique
   imageType     ImageType
@@ -260,6 +261,7 @@ model Image {
 
 model Activity {
   id               String   @id @default(cuid())
+  slug             String   @unique
   name             String
   locationName     String
   address1         String

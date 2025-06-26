@@ -42,7 +42,7 @@ export function generateMetadata(): Metadata {
 }
 
 const CreateEventPage = async () => {
-    const { user, session } = await authCheck();
+    const userSession = await authCheck();
     const { data: currencies } = await getAllCurrencies();
     const { data: currency } = await getCurrencyByCode('AUD');
     const countries = await getAllCountries();
@@ -59,6 +59,7 @@ const CreateEventPage = async () => {
                 countryProp={country || defaultCountry!}
                 countries={countries!}
                 states={states!}
+                userSession={userSession}
             />
         </div>
     );

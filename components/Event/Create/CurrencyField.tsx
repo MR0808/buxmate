@@ -28,13 +28,7 @@ import { CurrencyProps } from '@/types/events';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const CurrencyField = ({
-    currencies,
-    defaultCurrency,
-    currentStep,
-    setCurrency,
-    currency
-}: CurrencyProps) => {
+const CurrencyField = ({ currencies }: CurrencyProps) => {
     const [openCurrency, setOpenCurrency] = useState(false);
 
     const form = useFormContext();
@@ -61,15 +55,6 @@ const CurrencyField = ({
             }
         };
     }, [currencies]);
-
-    useEffect(() => {
-        // Ensure default currency is maintained when stepping through the form
-        const currentCurrency = form.getValues('currency');
-        if (!currentCurrency && defaultCurrency?.id) {
-            form.setValue('currency', defaultCurrency.id);
-            setCurrency(defaultCurrency.name);
-        }
-    }, [currentStep, defaultCurrency?.id, form]);
 
     return (
         <FormField
@@ -146,9 +131,6 @@ const CurrencyField = ({
                                                         form.setValue(
                                                             'currency',
                                                             currency.id
-                                                        );
-                                                        setCurrency(
-                                                            currency.name
                                                         );
                                                         setOpenCurrency(false);
                                                     }}
