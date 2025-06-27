@@ -26,3 +26,8 @@ export interface LocationProps {
 export interface CurrencyProps {
     currencies: Currency[];
 }
+
+export interface CreateActivityProps {
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}

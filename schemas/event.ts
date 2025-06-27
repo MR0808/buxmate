@@ -13,30 +13,36 @@ export const CreateEventSchema = z.object({
     currency: z.string().min(1, 'Currency is required')
 });
 
+export const PlaceSchema = z.object({
+    placeId: z.string().min(1, 'Place ID is required'),
+    name: z.string().optional(),
+    formattedAddress: z.string().min(1, 'Address is required'),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    types: z.array(z.string()).default([]),
+    streetNumber: z.string().optional(),
+    route: z.string().optional(),
+    locality: z.string().optional(),
+    administrativeAreaLevel1: z.string().optional(),
+    administrativeAreaLevel2: z.string().optional(),
+    country: z.string().optional(),
+    postalCode: z.string().optional()
+});
+
 export const CreateActivitySchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    locationName: z
-        .string()
-        .min(2, 'Location name must be at least 2 characters'),
-    address1: z.string().min(2, 'Address 1must be at least 2 characters'),
-    address2: z.optional(
-        z.string().min(2, 'Address 2 must be at least 2 characters')
-    ),
-    formattedAddress: z
-        .string()
-        .min(2, 'Formatted address must be at least 2 characters'),
-    latitude: z.number({
-        required_error: 'Latitude is required',
-        invalid_type_error: 'Latitude must be a number'
-    }),
-    longitude: z.number({
-        required_error: 'Longitude is required',
-        invalid_type_error: 'Longitude must be a number'
-    }),
-    city: z.string().min(2, 'City must be at least 2 characters'),
-    region: z.string().min(2, 'Region must be at least 2 characters'),
-    postalCode: z.string().min(2, 'Postal code must be at least 2 characters'),
-    country: z.string().min(2, 'Country must be at least 2 characters'),
+    activityName: z.string().min(2, 'Name must be at least 2 characters'),
+    placeId: z.string().min(1, 'Place ID is required'),
+    name: z.string().optional(),
+    formattedAddress: z.string().min(1, 'Address is required'),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    streetNumber: z.string().optional(),
+    route: z.string().optional(),
+    locality: z.string().optional(),
+    administrativeAreaLevel1: z.string().optional(),
+    administrativeAreaLevel2: z.string().optional(),
+    country: z.string().optional(),
+    postalCode: z.string().optional(),
     countryCode: z.optional(z.string()),
     startTime: z.coerce.date().refine((date) => !isNaN(date.getTime()), {
         message: 'Invalid start time'
@@ -50,3 +56,5 @@ export const CreateActivitySchema = z.object({
         .int('Cost must be an integer')
         .nonnegative('Cost cannot be negative')
 });
+
+export type CreateActivityFormValues = z.infer<typeof CreateActivitySchema>;

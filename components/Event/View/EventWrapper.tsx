@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { getEvent } from '@/actions/event';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import CreateActivity from '@/components/Event/View/CreateActivity';
+import CreateActivity from '@/components/Event/Activity/Create/CreateActivity';
 
 type EventType = Awaited<ReturnType<typeof getEvent>>['data'];
 
