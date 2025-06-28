@@ -1,80 +1,42 @@
-// Remove the GoogleMapsAPI interface since it's now in the loader
-// Keep the rest of the types
-
-export interface GooglePlaceResult {
-    place_id: string;
-    name?: string;
-    formatted_address: string;
-    geometry: {
-        location: {
-            lat: () => number;
-            lng: () => number;
-        };
-    };
-    types: string[];
-    rating?: number;
-    user_ratings_total?: number;
-    price_level?: number;
-    business_status?: string;
-    opening_hours?: {
-        open_now: boolean;
-        periods: Array<{
-            close: { day: number; time: string };
-            open: { day: number; time: string };
-        }>;
-        weekday_text: string[];
-    };
-    website?: string;
-    formatted_phone_number?: string;
-    international_phone_number?: string;
-    address_components: Array<{
-        long_name: string;
-        short_name: string;
-        types: string[];
-    }>;
-    vicinity?: string;
-    icon?: string;
-    icon_background_color?: string;
-    icon_mask_base_uri?: string;
-    photos?: Array<{
-        height: number;
-        width: number;
-        photo_reference: string;
-    }>;
-    plus_code?: {
-        compound_code: string;
-        global_code: string;
-    };
-    utc_offset?: number;
+export interface AddressType {
+    address1: string;
+    address2: string;
+    formattedAddress: string;
+    city: string;
+    region: string;
+    postalCode: string;
+    country: string;
+    lat: number;
+    lng: number;
+    countryCode: string;
 }
 
-export interface PlaceFormData {
-    placeId: string;
-    name?: string;
-    formattedAddress: string;
-    latitude: number;
-    longitude: number;
-    types: string[];
-    rating?: number;
-    userRatingsTotal?: number;
-    priceLevel?: number;
-    businessStatus?: string;
-    openingHours?: any;
-    website?: string;
-    phoneNumber?: string;
-    internationalPhoneNumber?: string;
-    streetNumber?: string;
-    route?: string;
-    locality?: string;
-    administrativeAreaLevel1?: string;
-    administrativeAreaLevel2?: string;
-    country?: string;
+export interface AddressAutoCompleteProps {
+    address: AddressType;
+    setAddress: (address: AddressType) => void;
+    searchInput: string;
+    setSearchInput: (searchInput: string) => void;
+    showInlineError?: boolean;
+    placeholder?: string;
+}
+
+export interface CommonProps {
+    selectedPlaceId: string;
+    setSelectedPlaceId: (placeId: string) => void;
+    showInlineError?: boolean;
+    searchInput: string;
+    setSearchInput: (searchInput: string) => void;
+    placeholder?: string;
+}
+
+export interface AddressFormProps {
+    address: AddressType;
+}
+
+export interface AddressFields {
+    address1?: string;
+    address2?: string;
+    city?: string;
+    region?: string;
     postalCode?: string;
-    vicinity?: string;
-    icon?: string;
-    iconBackgroundColor?: string;
-    iconMaskBaseUri?: string;
-    photos?: any;
-    plusCode?: any;
-    utcOffset?: number;
 }

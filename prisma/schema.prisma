@@ -192,6 +192,7 @@ model Country {
   states   State[]
   users    User[]
   Activity Activity[]
+  Place    Place[]
 }
 
 model State {
@@ -287,28 +288,18 @@ model Place {
   updatedAt DateTime @updatedAt
 
   // Core Google Places data
-  placeId          String  @unique
+  placeId          String?
   name             String?
+  address1         String
+  address2         String?
+  city             String
+  region           String
+  postalCode       String
+  country          Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryId        String
   formattedAddress String
-
-  // Geometry
-  latitude  Float
-  longitude Float
-
-  // Address components
-  streetNumber        String?
-  route               String?
-  locality            String?
-  administrativeArea1 String?
-  administrativeArea2 String?
-  country             String?
-  postalCode          String?
-
-  // Viewport bounds
-  viewportNortheastLat Float?
-  viewportNortheastLng Float?
-  viewportSouthwestLat Float?
-  viewportSouthwestLng Float?
+  latitude         Float
+  longitude        Float
 
   activity Activity?
 

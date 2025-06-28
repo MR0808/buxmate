@@ -1,90 +1,137 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
-// import { placeFormSchema, type PlaceFormValues } from '@/schemas/event';
-// import { revalidatePath } from 'next/cache';
+import { getGeolocation } from '@/utils/geolocation';
+import { authCheckServer } from '@/lib/authCheck';
+import { AddressType } from '@/types/places';
 
-// export async function createPlace(data: PlaceFormValues) {
-//     try {
-//         // Validate the data
-//         const validatedData = placeFormSchema.parse(data);
-
-//         // Check if place already exists
-//         const existingPlace = await prisma.place.findUnique({
-//             where: { placeId: validatedData.placeId }
-//         });
-
-//         if (existingPlace) {
-//             return {
-//                 success: false,
-//                 error: 'This place has already been added to the database'
-//             };
-//         }
-
-//         // Create the place
-//         const place = await prisma.place.create({
-//             data: {
-//                 placeId: validatedData.placeId,
-//                 name: validatedData.name,
-//                 formattedAddress: validatedData.formattedAddress,
-//                 latitude: validatedData.latitude,
-//                 longitude: validatedData.longitude,
-//                 streetNumber: validatedData.streetNumber,
-//                 route: validatedData.route,
-//                 locality: validatedData.locality,
-//                 administrativeArea1: validatedData.administrativeArea1,
-//                 administrativeArea2: validatedData.administrativeArea2,
-//                 country: validatedData.country,
-//                 postalCode: validatedData.postalCode,
-//                 types: validatedData.types || [],
-//                 businessStatus: validatedData.businessStatus,
-//                 rating: validatedData.rating,
-//                 userRatingsTotal: validatedData.userRatingsTotal,
-//                 priceLevel: validatedData.priceLevel,
-//                 website: validatedData.website,
-//                 phoneNumber: validatedData.phoneNumber,
-//                 openingHours: validatedData.openingHours,
-//                 photos: validatedData.photos,
-//                 reviews: validatedData.reviews,
-//                 plusCode: validatedData.plusCode,
-//                 utcOffset: validatedData.utcOffset,
-//                 viewportNortheastLat: validatedData.viewportNortheastLat,
-//                 viewportNortheastLng: validatedData.viewportNortheastLng,
-//                 viewportSouthwestLat: validatedData.viewportSouthwestLat,
-//                 viewportSouthwestLng: validatedData.viewportSouthwestLng
-//             }
-//         });
-
-//         revalidatePath('/');
-
-//         return {
-//             success: true,
-//             data: place
-//         };
-//     } catch (error) {
-//         console.error('Error creating place:', error);
-//         return {
-//             success: false,
-//             error: 'Failed to save place to database'
-//         };
-//     }
-// }
-
-export async function getPlaces() {
-    try {
-        const places = await prisma.place.findMany({
-            orderBy: { createdAt: 'desc' }
-        });
-
+export const autocompleteFetch = async (input: string) => {
+    const userSession = await authCheckServer();
+    if (!userSession) {
         return {
-            success: true,
-            data: places
-        };
-    } catch (error) {
-        console.error('Error fetching places:', error);
-        return {
-            success: false,
-            error: 'Failed to fetch places'
+            error: 'Not authorised',
+            data: null
         };
     }
-}
+
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY as string;
+    if (!apiKey) return { error: 'Missing API Key', data: null };
+    if (!input) return { error: 'Error', data: null };
+
+    const country = await getGeolocation();
+    const url = 'https://places.googleapis.com/v1/places:autocomplete';
+
+    const primaryTypes = [
+        'street_address',
+        'subpremise',
+        'route',
+        'street_number',
+        'landmark'
+    ];
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': apiKey
+            },
+            body: JSON.stringify({
+                input: input,
+                // includedPrimaryTypes: primaryTypes,
+                // Location biased towards the user's country
+                includedRegionCodes: [country || 'AU']
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        return { data: data.suggestions, error: null };
+    } catch (error) {
+        // console.error("Error fetching autocomplete suggestions:", error);
+        return { error: error, data: null };
+    }
+};
+
+export const placesFetch = async (placeId: string) => {
+    const userSession = await authCheckServer();
+    if (!userSession) {
+        return {
+            error: 'Not authorised',
+            data: null
+        };
+    }
+
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY as string;
+    if (!apiKey) return { error: 'Missing API Key', data: null };
+    if (!placeId) return { error: 'Error', data: null };
+    const url = `https://places.googleapis.com/v1/${placeId}`;
+
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'X-Goog-Api-Key': apiKey,
+                'X-Goog-FieldMask':
+                    // Include expected fields in the response
+                    'id,name,types,displayName,adrFormatAddress,shortFormattedAddress,formattedAddress,location,addressComponents',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        console.log(data);
+
+        const dataFinderRegx = (c: string) => {
+            const regx = new RegExp(`<span class="${c}">([^<]+)<\/span>`);
+            const match = data.adrFormatAddress.match(regx);
+            return match ? match[1] : '';
+        };
+
+        const cntry = data.addressComponents.find((component: any) =>
+            component.types.includes('country')
+        );
+
+        const address1 = dataFinderRegx('street-address');
+        const address2 = '';
+        const city = dataFinderRegx('locality');
+        const region = dataFinderRegx('region');
+        const postalCode = dataFinderRegx('postal-code');
+        const country = dataFinderRegx('country-name');
+        const lat = data.location.latitude;
+        const lng = data.location.longitude;
+        const countryCode = cntry ? cntry.shortText : '';
+
+        const formattedAddress = data.formattedAddress;
+
+        const formattedData: AddressType = {
+            address1,
+            address2,
+            formattedAddress,
+            city,
+            region,
+            postalCode,
+            country,
+            lat,
+            lng,
+            countryCode
+        };
+        return {
+            data: {
+                address: formattedData,
+                adrAddress: data.adrFormatAddress
+            },
+            error: null
+        };
+    } catch (err) {
+        // console.error('Error fetching place details:', err);
+        return { error: err, data: null };
+    }
+};
