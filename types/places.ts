@@ -1,4 +1,9 @@
 export interface AddressType {
+    id: string;
+    displayName: {
+        text: string;
+        languageCode?: string;
+    };
     address1: string;
     address2: string;
     formattedAddress: string;
@@ -9,9 +14,17 @@ export interface AddressType {
     lat: number;
     lng: number;
     countryCode: string;
+    types?: string[];
+    businessStatus?:
+        | 'OPERATIONAL'
+        | 'CLOSED_TEMPORARILY'
+        | 'CLOSED_PERMANENTLY'
+        | '';
 }
 
 export interface AddressAutoCompleteProps {
+    resultInput: string;
+    setResultInput: (resultInput: string) => void;
     address: AddressType;
     setAddress: (address: AddressType) => void;
     searchInput: string;

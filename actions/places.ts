@@ -76,7 +76,7 @@ export const placesFetch = async (placeId: string) => {
                 'X-Goog-Api-Key': apiKey,
                 'X-Goog-FieldMask':
                     // Include expected fields in the response
-                    'id,name,types,displayName,adrFormatAddress,shortFormattedAddress,formattedAddress,location,addressComponents',
+                    'id,name,types,displayName,adrFormatAddress,shortFormattedAddress,formattedAddress,location,addressComponents,businessStatus',
                 'Content-Type': 'application/json'
             }
         });
@@ -86,8 +86,6 @@ export const placesFetch = async (placeId: string) => {
         }
 
         const data = await response.json();
-
-        console.log(data);
 
         const dataFinderRegx = (c: string) => {
             const regx = new RegExp(`<span class="${c}">([^<]+)<\/span>`);
@@ -99,6 +97,10 @@ export const placesFetch = async (placeId: string) => {
             component.types.includes('country')
         );
 
+        console.log(data);
+
+        const id = data.id;
+        const displayName = data.displayName;
         const address1 = dataFinderRegx('street-address');
         const address2 = '';
         const city = dataFinderRegx('locality');
@@ -108,10 +110,13 @@ export const placesFetch = async (placeId: string) => {
         const lat = data.location.latitude;
         const lng = data.location.longitude;
         const countryCode = cntry ? cntry.shortText : '';
+        const types = data.types;
+        const businessStatus = data.businessStatus;
 
         const formattedAddress = data.formattedAddress;
 
         const formattedData: AddressType = {
+            id,
             address1,
             address2,
             formattedAddress,
@@ -121,7 +126,10 @@ export const placesFetch = async (placeId: string) => {
             country,
             lat,
             lng,
-            countryCode
+            countryCode,
+            displayName,
+            types,
+            businessStatus
         };
         return {
             data: {

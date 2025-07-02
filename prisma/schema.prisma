@@ -185,13 +185,12 @@ model AuditLog {
 }
 
 model Country {
-  id       String     @id @default(cuid())
+  id       String  @id @default(cuid())
   isoCode  String
   name     String
   currency String
   states   State[]
   users    User[]
-  Activity Activity[]
   Place    Place[]
 }
 
@@ -271,13 +270,10 @@ model Activity {
   startTime DateTime
   endTime   DateTime
   notes     String
-  place     Place    @relation(fields: [placeId], references: [id])
-  placeId   String   @unique
+  place     Place?
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  Country   Country? @relation(fields: [countryId], references: [id])
-  countryId String?
 
   @@map("activities")
 }
@@ -301,7 +297,8 @@ model Place {
   latitude         Float
   longitude        Float
 
-  activity Activity?
+  activity   Activity @relation(fields: [activityId], references: [id])
+  activityId String   @unique
 
   @@map("places")
 }

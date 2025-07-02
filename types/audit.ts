@@ -60,7 +60,8 @@ export type AuditAction =
     | 'admin.permission_granted'
 
     // Event actions
-    | 'event.event_created';
+    | 'event.event_created'
+    | 'event.activity_created';
 
 export interface CreateAuditLogParams {
     userId?: string;

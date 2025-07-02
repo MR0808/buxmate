@@ -15,3 +15,16 @@ export async function logEventCreated(
         metadata: { ...metadata }
     });
 }
+
+export async function logActivityCreated(
+    userId: string,
+    metadata?: Record<string, any>
+): Promise<AuditLogResult> {
+    return await logAuditEvent({
+        userId,
+        action: 'event.activity_created',
+        category: 'event',
+        description: `Activity created`,
+        metadata: { ...metadata }
+    });
+}

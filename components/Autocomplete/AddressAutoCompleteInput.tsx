@@ -64,7 +64,7 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
             onKeyDown={handleKeyDown}
             className={cn('h-auto overflow-visible')}
         >
-            <div className="flex w-full items-center justify-between rounded-lg border bg-background text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <div className="flex w-full items-center justify-between rounded-xl border bg-background text-sm ring-offset-background ">
                 <CommandPrimitive.Input
                     value={searchInput}
                     onValueChange={setSearchInput}
@@ -72,7 +72,7 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
                     onFocus={open}
                     placeholder={placeholder || 'Enter address'}
                     // className="h-14 w-full rounded-lg p-3 outline-hidden"
-                    className="block h-14 w-full rounded-lg border-neutral-200 bg-white px-5"
+                    className="block h-12 w-full rounded-xl border-neutral-200 bg-white px-6 py-3 text-sm font-normal"
                 />
             </div>
             {searchInput !== '' &&
