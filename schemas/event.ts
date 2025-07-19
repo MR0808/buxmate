@@ -46,12 +46,22 @@ export const CreateActivitySchema = z
         address2: z.optional(z.string()),
         formattedAddress: z.string().min(1, 'Formatted address is required'),
         latitude: z.number({
-            required_error: 'Latitude is required',
-            invalid_type_error: 'Latitude must be a number'
+            error: (issue) => {
+                if (issue.code === 'invalid_type') {
+                    return 'latitude must be a number';
+                }
+
+                return 'Latitude is required';
+            }
         }),
         longitude: z.number({
-            required_error: 'Longitude is required',
-            invalid_type_error: 'Longitude must be a number'
+            error: (issue) => {
+                if (issue.code === 'invalid_type') {
+                    return 'Longitude must be a number';
+                }
+
+                return 'Latitude is required';
+            }
         }),
         city: z.string().min(1, 'City is required'),
         region: z.string().min(1, 'Region is required'),
