@@ -3,14 +3,22 @@ import { headers } from 'next/headers';
 
 import { auth } from '@/lib/auth';
 
-export const authCheck = async () => {
+export const authCheck = async (callbackUrl?: string) => {
     const headerList = await headers();
 
     const session = await auth.api.getSession({
         headers: headerList
     });
 
-    if (!session) return redirect('/auth/login');
+    if (!session) {
+        if (callbackUrl) {
+            return redirect(
+                `/auth/login?callbackURL=${encodeURIComponent(callbackUrl)}`
+            );
+        } else {
+            return redirect('/auth/login');
+        }
+    }
 
     return session;
 };

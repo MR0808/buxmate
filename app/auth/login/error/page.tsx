@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 
-export async function generateMetadata() {
+export function generateMetadata(): Metadata {
     return {
         title: 'Login Error',
         description: 'Buxmate Login'

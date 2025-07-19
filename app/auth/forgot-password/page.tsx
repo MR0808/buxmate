@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 
 import ForgotPasswordForm from '@/components/Auth/ForgotPasswordForm';
 
-export async function generateMetadata() {
+export function generateMetadata(): Metadata {
     return {
         title: 'Forgot Password',
         description: 'Buxmate Forgot Password'

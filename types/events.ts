@@ -1,6 +1,7 @@
 import { Prisma, Country, State } from '@/generated/prisma';
 
 import { auth } from '@/lib/auth';
+import { getEvent } from '@/actions/event';
 
 export type Session = typeof auth.$Infer.Session;
 export type SessionType = Awaited<ReturnType<typeof auth.api.getSession>>;
@@ -8,6 +9,8 @@ export type SessionType = Awaited<ReturnType<typeof auth.api.getSession>>;
 type Currency = Prisma.CurrencyGetPayload<{
     select: { id: true; name: true; code: true; symbolNative: true };
 }>;
+
+export type EventType = Awaited<ReturnType<typeof getEvent>>['data'];
 
 export interface AddEventProps {
     currencies: Currency[];

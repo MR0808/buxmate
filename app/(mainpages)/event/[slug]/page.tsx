@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import parsePhoneNumber, { PhoneNumber } from 'libphonenumber-js';
+import type { Metadata } from 'next';
 
 import { getEvent } from '@/actions/event';
 import { ParamsSlug } from '@/types/global';
@@ -29,11 +30,11 @@ export async function generateMetadata({
     params
 }: {
     params: Promise<{ slug: string }>;
-}) {
+}): Promise<Metadata> {
     const { slug } = await params;
     const { data: event } = await getEvent(slug);
     if (!event) {
-        return null;
+        return { title: 'Event not found' };
     }
     const title = `View Event | ${event.title}`;
     const description = 'View your event details';
@@ -45,8 +46,8 @@ export async function generateMetadata({
 }
 
 const EventDetailsPage = async (props: { params: ParamsSlug }) => {
-    const userSession = await authCheck();
     const { slug } = await props.params;
+    const userSession = await authCheck(`/event/${slug}`);
     const { data } = await getEvent(slug);
 
     if (!data) return <Alert color="destructive"> Event id is not valid</Alert>;

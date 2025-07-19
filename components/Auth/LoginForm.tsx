@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { useForm, SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
 import { useTransition, useState } from 'react';
 import { toast } from 'sonner';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
     Form,
@@ -28,6 +28,8 @@ import { login } from '@/actions/login';
 const LoginForm = () => {
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackURL = searchParams.get('callbackURL') || '/';
 
     const form = useForm<z.infer<typeof LoginSchema>>({
         resolver: zodResolver(LoginSchema),
@@ -45,7 +47,7 @@ const LoginForm = () => {
                 toast.error(error, { position: 'top-center' });
             } else {
                 toast.success('Log in successful', { position: 'top-center' });
-                router.push('/');
+                router.push(callbackURL);
             }
         });
     };

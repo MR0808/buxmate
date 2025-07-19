@@ -43,7 +43,7 @@ export function generateMetadata(): Metadata {
 }
 
 const SettingsPage = async () => {
-    const userSession = await authCheck();
+    const userSession = await authCheck('/settings');
     const { user } = userSession;
 
     const countries = await getAllCountries();

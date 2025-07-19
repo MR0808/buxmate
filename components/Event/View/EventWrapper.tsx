@@ -5,16 +5,11 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
-import { getEvent } from '@/actions/event';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import CreateActivity from '@/components/Event/Activity/Create/CreateActivity';
 import { auth } from '@/lib/auth';
-
-export type Session = typeof auth.$Infer.Session;
-export type SessionType = Awaited<ReturnType<typeof auth.api.getSession>>;
-
-type EventType = Awaited<ReturnType<typeof getEvent>>['data'];
+import { Session, SessionType, EventType } from '@/types/events';
 
 const EventWrapper = ({
     children,

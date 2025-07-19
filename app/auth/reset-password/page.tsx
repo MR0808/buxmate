@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import { Metadata } from 'next';
 
 import ResetPasswordForm from '@/components/Auth/ResetPasswordForm';
 
-export async function generateMetadata() {
+export function generateMetadata(): Metadata {
     return {
         title: 'New Password',
         description: 'Buxmate New Password'

@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 
 import RegisterForm from '@/components/Auth/RegisterForm';
 import SocialLogin from '@/components/Auth/SocialLogin';
 
-export async function generateMetadata() {
+export function generateMetadata(): Metadata {
     return {
         title: 'Register',
         description: 'Buxmate Registration'

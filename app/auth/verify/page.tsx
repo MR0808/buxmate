@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
+
 import EmailVerificationForm from '@/components/Auth/EmailVerificationForm';
 
-export async function generateMetadata() {
+export function generateMetadata(): Metadata {
     return {
         title: 'Verification',
         description: 'Buxmate Verification'
