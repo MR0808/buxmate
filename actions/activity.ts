@@ -30,6 +30,14 @@ export const createActivity = async (
     }
 
     try {
+        const event = await prisma.event.findUnique({ where: { id: eventId } });
+
+        if (!event)
+            return {
+                success: false,
+                message: 'Invalid event'
+            };
+
         const validatedFields = CreateActivitySchemaOutput.safeParse(values);
 
         if (!validatedFields.success) {
@@ -38,6 +46,13 @@ export const createActivity = async (
                 message: 'Invalid fields'
             };
         }
+
+        if (event.date > values.startTime)
+            return {
+                success: false,
+                message:
+                    'Start time and date must be after the event start time'
+            };
 
         const countryId = await prisma.country.findFirst({
             where: { isoCode: values.countryCode }

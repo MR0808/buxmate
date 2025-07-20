@@ -202,9 +202,7 @@ const CreateActivity = ({ event, userSession }: CreateActivityProps) => {
                     const data = await createActivity(newValues, event.id);
 
                     if (!data.success) {
-                        toast.error(
-                            'There was an error creating your activity, please try again'
-                        );
+                        toast.error(data.message);
                         return;
                     }
 

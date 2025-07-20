@@ -29,3 +29,27 @@ export interface LocationProps {
 export interface CurrencyProps {
     currencies: Currency[];
 }
+
+export interface EventInformationProps {
+    event: {
+        host: {
+            name: string;
+            id: string;
+            lastName: string;
+            email: string;
+            image: string | null;
+            phoneNumber: string | null;
+        };
+        date: Date;
+        timezone: string;
+        id: string;
+        state: {
+            name: string;
+            country: {
+                name: string;
+                id: string;
+            };
+            id: string;
+        };
+    };
+}
