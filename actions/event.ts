@@ -159,7 +159,10 @@ export const getEvent = async (slug: string) => {
                         image: true
                     }
                 },
-                activities: { orderBy: { startTime: 'asc' } },
+                activities: {
+                    include: { place: true },
+                    orderBy: { startTime: 'asc' }
+                },
                 guests: { orderBy: { name: 'asc' } }
             }
         });

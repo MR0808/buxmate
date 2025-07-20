@@ -15,7 +15,9 @@ const EventInformation = ({ event }: EventInformationProps) => {
     return (
         <Card className="lg:col-span-3 col-span-12">
             <CardHeader className="border-b">
-                <CardTitle className="text-xl font-normal">Info</CardTitle>
+                <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+                    Info
+                </CardTitle>
             </CardHeader>
             <CardContent className="pt-4">
                 <ul className="list space-y-8">

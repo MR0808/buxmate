@@ -22,18 +22,31 @@ const EventWrapper = ({
     return (
         <div>
             <div className="flex w-full flex-wrap items-center gap-4 mb-6">
-                <h4 className="flex-1 font-medium lg:text-2xl text-xl capitalize text-default-900">
-                    {event.title}
-                </h4>
+                <Link
+                    href={`/event/${event.slug}`}
+                    className="cursor-pointer flex-1"
+                >
+                    <h4 className="font-medium lg:text-2xl text-xl capitalize text-default-900">
+                        {event.title}
+                    </h4>
+                </Link>
                 {!pathname.includes('/activity/create') && (
-                    <div className="flex items-center gap-4 flex-wrap">
-                        <Link href={`/event/${event.slug}/activity/create`}>
+                    <>
+                        <div className="flex items-center gap-4 flex-wrap">
+                            <Link href={`/event/${event.slug}/activity/create`}>
+                                <Button className="flex-none cursor-pointer">
+                                    <Plus className="w-4 h-4 me-1" />
+                                    <span>Add Activity</span>
+                                </Button>
+                            </Link>
+                        </div>
+                        <div className="flex items-center gap-4 flex-wrap">
                             <Button className="flex-none cursor-pointer">
                                 <Plus className="w-4 h-4 me-1" />
-                                <span>Add Activity</span>
+                                <span>Add Guests</span>
                             </Button>
-                        </Link>
-                    </div>
+                        </div>
+                    </>
                 )}
             </div>
             {children}

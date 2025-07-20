@@ -40,7 +40,13 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
     if (!data) return <Alert color="destructive"> Event id is not valid</Alert>;
 
     const activities = data.activities.map((activity) => {
-        return { activityName: activity.name, activityCost: activity.cost };
+        return {
+            activityName: activity.name,
+            activityCost: activity.cost,
+            startTime: activity.startTime,
+            endTime: activity.endTime,
+            location: activity.place?.name || ''
+        };
     });
 
     const event = {
@@ -149,10 +155,15 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
 
                     <Card className="col-span-12 xl:col-span-4">
                         <CardHeader>
-                            <CardTitle>Activities</CardTitle>
+                            <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+                                Activities
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-6">
-                            <EventActivities activities={activities} />
+                        <CardContent className="p-0">
+                            <EventActivities
+                                activities={activities}
+                                timezone={event.timezone}
+                            />
                         </CardContent>
                     </Card>
 
