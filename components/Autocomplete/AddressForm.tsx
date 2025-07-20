@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/form';
 
 import { cn } from '@/lib/utils';
-import { CreateActivitySchema } from '@/schemas/event';
+import { CreateActivitySchema } from '@/schemas/activity';
 import { AddressFormProps } from '@/types/places';
 
 const AddressForm = (props: React.PropsWithChildren<AddressFormProps>) => {
