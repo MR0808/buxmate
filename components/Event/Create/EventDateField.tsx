@@ -21,14 +21,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const DateField = () => {
+const EventDateField = () => {
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const form = useFormContext();
 
     return (
         <FormField
             control={form.control}
-            name="date"
+            name="eventDate"
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>Date</FormLabel>
@@ -79,4 +79,4 @@ const DateField = () => {
         />
     );
 };
-export default DateField;
+export default EventDateField;

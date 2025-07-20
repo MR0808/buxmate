@@ -1,5 +1,7 @@
 'use client';
 
+import type React from 'react';
+
 import { Command as CommandPrimitive } from 'cmdk';
 import { Loader2 } from 'lucide-react';
 import { useCallback, useState, useEffect, useTransition } from 'react';
@@ -12,7 +14,7 @@ import {
 } from '@/components/ui/command';
 import { useDebounce } from '@/hooks/useDebounce';
 import { FormMessages } from '@/components/Form/FormMessages';
-import { CommonProps } from '@/types/places';
+import type { CommonProps } from '@/types/places';
 import { cn } from '@/lib/utils';
 import { autocompleteFetch } from '@/actions/places';
 
@@ -28,14 +30,19 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
 
     const [isOpen, setIsOpen] = useState(false);
     const [predictions, setPredictions] = useState<any[]>([]);
-    const [isPending, startTransition] = useTransition();
+    const [isFetchingPredictions, startFetchingPredictions] = useTransition();
 
-    const open = useCallback(() => setIsOpen(true), []);
-    const close = useCallback(() => setIsOpen(false), []);
+    const handleFocus = useCallback(() => setIsOpen(true), []);
+    const handleBlur = useCallback(() => {
+        // Delay closing to allow onSelect to fire before blur
+        // This is a common pattern for Comboboxes to ensure click events on items register
+        setTimeout(() => setIsOpen(false), 100);
+    }, []);
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Escape') {
-            close();
+            setIsOpen(false);
+            (event.target as HTMLInputElement).blur();
         }
     };
 
@@ -47,7 +54,7 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
             return;
         }
 
-        startTransition(async () => {
+        startFetchingPredictions(async () => {
             try {
                 const result = await autocompleteFetch(debouncedSearchInput);
                 setPredictions(result?.data || []);
@@ -67,11 +74,10 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
             <div className="flex w-full items-center justify-between rounded-xl border bg-background text-sm ring-offset-background ">
                 <CommandPrimitive.Input
                     value={searchInput}
-                    onValueChange={setSearchInput}
-                    onBlur={close}
-                    onFocus={open}
+                    onValueChange={setSearchInput} // This is where user typing updates the local searchInput state
+                    onBlur={handleBlur}
+                    onFocus={handleFocus}
                     placeholder={placeholder || 'Enter address'}
-                    // className="h-14 w-full rounded-lg p-3 outline-hidden"
                     className="block h-12 w-full rounded-xl border-neutral-200 bg-white px-6 py-3 text-sm font-normal"
                 />
             </div>
@@ -86,12 +92,12 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
                     />
                 )}
 
-            {isOpen && (
+            {isOpen && searchInput !== '' && (
                 <div className="relative h-auto animate-in fade-in-0 zoom-in-95">
                     <CommandList>
                         <div className="absolute top-1.5 z-50 w-full">
                             <CommandGroup className="relative z-50 h-auto min-w-[8rem] overflow-hidden rounded-md border bg-background shadow-md">
-                                {isPending ? (
+                                {isFetchingPredictions ? (
                                     <div className="flex h-28 items-center justify-center">
                                         <Loader2 className="size-6 animate-spin" />
                                     </div>
@@ -112,12 +118,17 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
                                                             .text.text
                                                     }
                                                     onSelect={() => {
-                                                        setSearchInput('');
+                                                        setSearchInput(
+                                                            prediction
+                                                                .placePrediction
+                                                                .text.text
+                                                        ); // Update input with selected text
                                                         setSelectedPlaceId(
                                                             prediction
                                                                 .placePrediction
                                                                 .place
-                                                        );
+                                                        ); // Trigger fetch in parent
+                                                        setIsOpen(false); // Close the dropdown
                                                     }}
                                                     className="flex h-max cursor-pointer select-text flex-col items-start gap-0.5 rounded-md p-2 px-3 hover:bg-accent hover:text-accent-foreground aria-selected:bg-accent aria-selected:text-accent-foreground"
                                                     key={
@@ -127,7 +138,7 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
                                                     }
                                                     onMouseDown={(e) =>
                                                         e.preventDefault()
-                                                    }
+                                                    } // Prevent blurring input on item click
                                                 >
                                                     {
                                                         prediction
@@ -141,13 +152,14 @@ const AddressAutoCompleteInput = (props: CommonProps) => {
                                 )}
 
                                 <CommandEmpty>
-                                    {!isPending && predictions.length === 0 && (
-                                        <div className="flex items-center justify-center py-4">
-                                            {searchInput === ''
-                                                ? 'Please enter an address'
-                                                : 'No address found'}
-                                        </div>
-                                    )}
+                                    {!isFetchingPredictions &&
+                                        predictions.length === 0 && (
+                                            <div className="flex items-center justify-center py-4">
+                                                {searchInput === ''
+                                                    ? 'Please enter an address'
+                                                    : 'No address found'}
+                                            </div>
+                                        )}
                                 </CommandEmpty>
                             </CommandGroup>
                         </div>

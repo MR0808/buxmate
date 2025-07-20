@@ -329,9 +329,6 @@ const ImageUploadField = ({
                                 <p className="text-xs text-gray-500">
                                     PNG, JPG, GIF up to 5MB
                                 </p>
-                                <p className="text-xs text-blue-500 mt-1">
-                                    Uploads to Supabase Storage
-                                </p>
                             </div>
                         </>
                     )}

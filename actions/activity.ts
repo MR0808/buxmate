@@ -6,8 +6,7 @@ import GithubSlugger, { slug } from 'github-slugger';
 import { prisma } from '@/lib/prisma';
 import { authCheckServer } from '@/lib/authCheck';
 import { ActionResult } from '@/types/global';
-import { CreateActivitySchema } from '@/schemas/event';
-import { timeStringToDateTime } from '@/utils/time';
+import { CreateActivitySchemaOutput } from '@/schemas/activity';
 
 const slugger = new GithubSlugger();
 
@@ -18,7 +17,7 @@ const convertDollarsToCents = (dollarString: string): number => {
 };
 
 export const createActivity = async (
-    values: z.infer<typeof CreateActivitySchema>,
+    values: z.infer<typeof CreateActivitySchemaOutput>,
     eventId: string
 ) => {
     const userSession = await authCheckServer();
@@ -31,7 +30,7 @@ export const createActivity = async (
     }
 
     try {
-        const validatedFields = CreateActivitySchema.safeParse(values);
+        const validatedFields = CreateActivitySchemaOutput.safeParse(values);
 
         if (!validatedFields.success) {
             return {
@@ -72,8 +71,8 @@ export const createActivity = async (
                 name: values.activityName,
                 eventId,
                 cost: convertDollarsToCents(values.cost),
-                startTime: timeStringToDateTime(values.startTime),
-                endTime: timeStringToDateTime(values.endTime),
+                startTime: values.startTime,
+                endTime: values.endTime,
                 notes: values.notes || '',
                 place: {
                     create: {

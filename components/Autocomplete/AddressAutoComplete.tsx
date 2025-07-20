@@ -4,60 +4,54 @@ import type * as z from 'zod';
 import { Delete } from 'lucide-react';
 import { useEffect, useState, useTransition, useCallback, useRef } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { AddressAutoCompleteProps, AddressType } from '@/types/places';
+import type { AddressType } from '@/types/places';
 import AddressAutoCompleteInput from './AddressAutoCompleteInput';
-import type { CreateActivitySchema } from '@/schemas/event';
+import type { CreateActivitySchema } from '@/schemas/activity'; // Assuming this is the correct schema
 import { cn } from '@/lib/utils';
 import { placesFetch } from '@/actions/places';
 import { isLikelyBusiness } from '@/utils/geolocation';
 
-const AddressAutoComplete = (props: AddressAutoCompleteProps) => {
-    const {
-        address,
-        setAddress,
-        showInlineError = true,
-        searchInput,
-        setSearchInput,
-        placeholder,
-        resultInput,
-        setResultInput
-    } = props;
+interface AddressAutoCompleteProps {
+    value: string; // formattedAddress from form
+    onChange: (...event: any[]) => void; // onChange from form
+    name: string; // name from form
+}
 
+const AddressAutoComplete = ({
+    value,
+    onChange,
+    name
+}: AddressAutoCompleteProps) => {
     const form = useFormContext<z.infer<typeof CreateActivitySchema>>();
-    const [isPending, startTransition] = useTransition();
-    const [selectedPlaceId, setSelectedPlaceId] = useState('');
-    const isResetting = useRef(false);
+    const [isFetchingPlaceDetails, startFetchingPlaceDetails] = useTransition();
+    const [internalSelectedPlaceId, setInternalSelectedPlaceId] = useState(''); // Internal state for the place ID trigger
+    const [searchInput, setSearchInput] = useState(value || ''); // State for the text input by user
+    const isResettingRef = useRef(false); // Ref to manage reset state across renders
 
-    // Memoize the reset function to prevent unnecessary re-renders
+    // --- REMOVED THE PROBLEMTAIC useEffect HERE ---
+    // This useEffect was causing the input to reset during typing.
+    // The searchInput will now be controlled by AddressAutoCompleteInput during typing,
+    // and only updated by this component on explicit selection or reset.
+
+    // Callback to be passed to AddressAutoCompleteInput to update the internal selected place ID
+    const handlePlaceIdSelected = useCallback((placeId: string) => {
+        console.log('handlePlaceIdSelected called with:', placeId);
+        setInternalSelectedPlaceId(placeId);
+    }, []);
+
     const resetAddress = useCallback(() => {
-        if (isResetting.current) return;
+        console.log('resetAddress initiated.');
+        isResettingRef.current = true;
 
-        isResetting.current = true;
+        setInternalSelectedPlaceId(''); // Clear the internal selected place ID
+        setSearchInput(''); // Clear the text in the input field
+        onChange(''); // Clear the formattedAddress in the form
 
-        setSelectedPlaceId('');
-        setSearchInput('');
-        setResultInput('');
-        setAddress({
-            id: '',
-            address1: '',
-            address2: '',
-            formattedAddress: '',
-            city: '',
-            region: '',
-            postalCode: '',
-            country: '',
-            lat: 0,
-            lng: 0,
-            countryCode: '',
-            types: [],
-            businessStatus: '',
-            displayName: { text: '' }
-        });
-
-        // Clear form values
+        // Clear all related form values
         form.setValue('placeId', '');
         form.setValue('displayName', '');
         form.setValue('address1', '');
@@ -66,28 +60,59 @@ const AddressAutoComplete = (props: AddressAutoCompleteProps) => {
         form.setValue('region', '');
         form.setValue('postalCode', '');
         form.setValue('country', '');
-        form.setValue('formattedAddress', '');
         form.setValue('countryCode', '');
         form.setValue('latitude', 0);
         form.setValue('longitude', 0);
         form.setValue('types', []);
-        form.setValue('busisnessStatus', '');
+        form.setValue('businessStatus', '');
+
+        form.clearErrors('formattedAddress');
 
         setTimeout(() => {
-            isResetting.current = false;
+            isResettingRef.current = false;
+            form.trigger('formattedAddress');
+            console.log('resetAddress completed.');
         }, 100);
-    }, [setSelectedPlaceId, setSearchInput, setResultInput, setAddress, form]);
+    }, [onChange, form]);
 
     useEffect(() => {
-        if (selectedPlaceId === '' || isResetting.current) return;
+        console.log(
+            'AddressAutoComplete useEffect triggered. internalSelectedPlaceId:',
+            internalSelectedPlaceId,
+            'isResettingRef.current:',
+            isResettingRef.current
+        );
 
-        startTransition(async () => {
+        // Only proceed if a placeId is selected and we are not currently resetting
+        if (internalSelectedPlaceId === '' || isResettingRef.current) {
+            console.log(
+                'Skipping fetch: internalSelectedPlaceId is empty or resetting.'
+            );
+            return;
+        }
+
+        // Clear the internalSelectedPlaceId immediately to prevent re-triggering this effect
+        // if the component re-renders for other reasons while the fetch is ongoing.
+        // The fetch operation is now solely triggered by the *change* in internalSelectedPlaceId.
+        const placeIdToFetch = internalSelectedPlaceId;
+        setInternalSelectedPlaceId(''); // Clear the trigger immediately
+
+        startFetchingPlaceDetails(async () => {
+            console.log(
+                'startFetchingPlaceDetails initiated for placeId:',
+                placeIdToFetch
+            );
             try {
-                const result = await placesFetch(selectedPlaceId);
+                const result = await placesFetch(placeIdToFetch);
+                console.log(
+                    'placesFetch result for',
+                    placeIdToFetch,
+                    ':',
+                    result
+                );
 
                 if (result?.data?.address) {
                     const adrInputs = result.data.address as AddressType;
-                    setAddress(adrInputs);
 
                     const isBusiness = await isLikelyBusiness({
                         types: adrInputs.types || [],
@@ -98,9 +123,9 @@ const AddressAutoComplete = (props: AddressAutoCompleteProps) => {
                         ? adrInputs.displayName?.text
                         : adrInputs.formattedAddress;
 
-                    setResultInput(displayText || '');
+                    onChange(displayText || ''); // Update the form's formattedAddress field. This is the source of truth.
+                    setSearchInput(displayText || ''); // Keep searchInput in sync with the selected display text
 
-                    // Update form values
                     form.setValue('placeId', adrInputs.id);
                     form.setValue(
                         'displayName',
@@ -112,31 +137,58 @@ const AddressAutoComplete = (props: AddressAutoCompleteProps) => {
                     form.setValue('region', adrInputs.region);
                     form.setValue('postalCode', adrInputs.postalCode);
                     form.setValue('country', adrInputs.country);
-                    form.setValue(
-                        'formattedAddress',
-                        adrInputs.formattedAddress
-                    );
                     form.setValue('countryCode', adrInputs.countryCode);
                     form.setValue('latitude', adrInputs.lat);
                     form.setValue('longitude', adrInputs.lng);
                     form.setValue('types', adrInputs.types || []);
                     form.setValue(
-                        'busisnessStatus',
+                        'businessStatus',
                         adrInputs.businessStatus || ''
+                    );
+
+                    form.clearErrors('formattedAddress');
+                    form.trigger('formattedAddress');
+                    console.log(
+                        'Address data processed successfully for',
+                        placeIdToFetch
+                    );
+                } else {
+                    console.warn(
+                        'No address data found for selected place ID:',
+                        placeIdToFetch
+                    );
+                    resetAddress();
+                    toast.error(
+                        'Could not retrieve address details. Please try another location.'
                     );
                 }
             } catch (error) {
-                console.error('Error fetching place data:', error);
+                console.error(
+                    'Error fetching place data in startFetchingPlaceDetails for',
+                    placeIdToFetch,
+                    ':',
+                    error
+                );
+                resetAddress();
+                toast.error(
+                    'An error occurred while fetching address details. Please try again.'
+                );
+            } finally {
+                console.log(
+                    'startFetchingPlaceDetails finished for placeId:',
+                    placeIdToFetch
+                );
             }
         });
-    }, [selectedPlaceId, setAddress, setResultInput, form]);
+    }, [internalSelectedPlaceId, onChange, form, resetAddress]); // Depend on internalSelectedPlaceId
 
-    const hasSelectedAddress =
-        selectedPlaceId !== '' || address.formattedAddress;
+    // Determine if an address is currently selected/displayed based on the form's value
+    // This ensures the read-only input is shown only when the form's value is populated.
+    const hasSelectedAddress = !!value && value !== 'Loading...';
 
     return (
         <>
-            {isPending ? (
+            {isFetchingPlaceDetails ? (
                 <div className="flex items-center gap-2">
                     <Input
                         value="Loading..."
@@ -149,7 +201,7 @@ const AddressAutoComplete = (props: AddressAutoCompleteProps) => {
             ) : hasSelectedAddress ? (
                 <div className="flex items-center gap-2">
                     <Input
-                        value={resultInput}
+                        value={value} // Display the actual form value (formattedAddress)
                         readOnly
                         className={cn(
                             'block h-12 w-full rounded-xl border-neutral-200 bg-white px-5'
@@ -168,10 +220,10 @@ const AddressAutoComplete = (props: AddressAutoCompleteProps) => {
                 <AddressAutoCompleteInput
                     searchInput={searchInput}
                     setSearchInput={setSearchInput}
-                    selectedPlaceId={selectedPlaceId}
-                    setSelectedPlaceId={setSelectedPlaceId}
-                    showInlineError={showInlineError}
-                    placeholder={placeholder}
+                    selectedPlaceId={internalSelectedPlaceId} // Pass internalSelectedPlaceId to input for its own logic
+                    setSelectedPlaceId={handlePlaceIdSelected} // Use the new handler to update internal state
+                    showInlineError={true}
+                    placeholder="Enter activity location"
                 />
             )}
         </>

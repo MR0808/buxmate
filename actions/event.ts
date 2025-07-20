@@ -6,7 +6,7 @@ import GithubSlugger, { slug } from 'github-slugger';
 import { prisma } from '@/lib/prisma';
 import { authCheckServer } from '@/lib/authCheck';
 import { ActionResult } from '@/types/global';
-import { CreateEventSchema } from '@/schemas/event';
+import { CreateEventSchemaOutput } from '@/schemas/event';
 
 const slugger = new GithubSlugger();
 
@@ -44,7 +44,7 @@ export const getImageUrl = async (id: string): Promise<ActionResult> => {
 };
 
 export const createEvent = async (
-    values: z.infer<typeof CreateEventSchema>
+    values: z.infer<typeof CreateEventSchemaOutput>
 ) => {
     const userSession = await authCheckServer();
 
@@ -56,7 +56,7 @@ export const createEvent = async (
     }
 
     try {
-        const validatedFields = CreateEventSchema.safeParse(values);
+        const validatedFields = CreateEventSchemaOutput.safeParse(values);
 
         if (!validatedFields.success) {
             return {
