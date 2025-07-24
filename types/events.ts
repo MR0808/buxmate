@@ -40,6 +40,8 @@ export interface EventInformationProps {
             image: string | null;
             phoneNumber: string | null;
         };
+        totalCost: number;
+        totalGuests: number;
         date: Date;
         timezone: string;
         id: string;
@@ -53,3 +55,19 @@ export interface EventInformationProps {
         };
     };
 }
+
+export interface AddGuestsProps {
+    open: boolean;
+    setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+export type ValidationResult = {
+    validEmails?: string[];
+    invalidEmails?: string[];
+    validPhoneNumbers?: Array<{
+        original: string;
+        formatted: string;
+        country?: string;
+    }>;
+    invalidPhoneNumbers?: string[];
+};

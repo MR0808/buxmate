@@ -12,6 +12,7 @@ import { Alert } from '@/components/ui/alert';
 import EventWrapper from '@/components/Event/View/EventWrapper';
 import EventActivities from '@/components/Event/View/EventActivities';
 import EventInformation from '@/components/Event/View/EventInformation';
+import { Activity } from '@/types/activity';
 
 export async function generateMetadata({
     params
@@ -39,7 +40,7 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
 
     if (!data) return <Alert color="destructive"> Event id is not valid</Alert>;
 
-    const activities = data.activities.map((activity) => {
+    const activities: Activity[] = data.activities.map((activity) => {
         return {
             activityName: activity.name,
             activityCost: activity.cost,
@@ -49,12 +50,23 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
         };
     });
 
+    const getTotalCost = (activitiesArray: Activity[]): number => {
+        return activitiesArray.reduce(
+            (total, activity) => total + activity.activityCost, // Note: Use activityCost to match the property name
+            0
+        );
+    };
+
+    const totalCost = activities.length > 0 ? getTotalCost(activities) : 0;
+
     const event = {
         host: data.host,
         timezone: data.timezone,
         id: data.id,
         date: data.date,
-        state: data.state
+        state: data.state,
+        totalCost,
+        totalGuests: data.guests.length
     };
 
     return (
@@ -64,38 +76,27 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
                     <EventInformation event={event} />
                     <Card className="col-span-12 xl:col-span-5">
                         <CardHeader>
-                            <CardTitle>About Project</CardTitle>
+                            <CardTitle>
+                                <Image
+                                    src={
+                                        data.image?.image ||
+                                        '/images/logo/logo.png'
+                                    }
+                                    alt={data.title}
+                                    width={300}
+                                    height={100}
+                                    className="rounded-4xl"
+                                />
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6">
-                            <div className="text-base font-medium text-default-800  mb-3">
+                            {/* <div className="text-base font-medium text-default-800  mb-3">
                                 Background information
-                            </div>
+                            </div> */}
                             <p className="text-sm text-default-600">
-                                The Optimistic Website Company - Amet minim
-                                mollit non deserunt ullamco est sit aliqua dolor
-                                do amet sint. Velit officia consequat duis enim
-                                velit mollit. Exercita -tion veniam consequat
-                                sunt nostrud amet.
+                                {data.description}
                             </p>
-                            <br />
-                            <p className="text-sm text-default-600">
-                                Amet minim mollit non deserunt ullamco est sit
-                                aliqua dolor do amet sint.The Optimistic Website
-                                Company - Amet minim mollit non deserunt ullamco
-                                est sit aliqua dolor do amet sint. Velit officia
-                                consequat duis enim velit mollit. Exercita -tion
-                                veniam consequat sunt nostrud amet.
-                            </p>
-                            <p className="text-sm text-default-600 mt-4">
-                                Amet minim mollit non deserunt ullamco est sit
-                                aliqua dolor do amet sint.The Optimistic Website
-                                Company. Amet minim mollit non deserunt ullamco
-                                est sit aliqua dolor do amet sint.The Optimistic
-                                Website Company. <br /> <br />
-                                Amet minim mollit non deserunt ullamco est sit
-                                aliqua dolor do amet sint.The Optimistic Website
-                                Company.
-                            </p>
+
                             <div className="flex flex-wrap mt-8">
                                 <div className="xl:mr-8 mr-4 mb-3 space-y-1">
                                     <div className="font-semibold text-default-500 ">

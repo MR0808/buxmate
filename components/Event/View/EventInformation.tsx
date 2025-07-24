@@ -1,10 +1,19 @@
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import parsePhoneNumber, { PhoneNumber } from 'libphonenumber-js';
-import { Phone, Mail, Map, CalendarClock, CircleUserRound } from 'lucide-react';
+import {
+    Phone,
+    Mail,
+    Map,
+    CalendarClock,
+    CircleUserRound,
+    DollarSign,
+    UsersRound
+} from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EventInformationProps } from '@/types/events';
+import { formatDollarsForDisplay } from '@/lib/cost';
 
 const EventInformation = ({ event }: EventInformationProps) => {
     let phoneNumber: PhoneNumber | undefined;
@@ -12,6 +21,7 @@ const EventInformation = ({ event }: EventInformationProps) => {
     if (event.host.phoneNumber) {
         phoneNumber = parsePhoneNumber(event.host.phoneNumber);
     }
+
     return (
         <Card className="lg:col-span-3 col-span-12">
             <CardHeader className="border-b">
@@ -40,6 +50,20 @@ const EventInformation = ({ event }: EventInformationProps) => {
                                     toZonedTime(event.date, event.timezone),
                                     'do MMMM, yyyy'
                                 )}
+                            </div>
+                        </div>
+                    </li>
+
+                    <li className="flex space-x-3 rtl:space-x-reverse">
+                        <div className="flex-none text-2xl text-default-600 ">
+                            <DollarSign />
+                        </div>
+                        <div className="flex-1">
+                            <div className="uppercase text-xs text-default-500  mb-1 leading-[12px]">
+                                Total Cost
+                            </div>
+                            <div>
+                                {formatDollarsForDisplay(event.totalCost)}
                             </div>
                         </div>
                     </li>
@@ -102,6 +126,20 @@ const EventInformation = ({ event }: EventInformationProps) => {
                             </div>
                             <div className="text-base text-default-600 ">
                                 {`${event.state.name}, ${event.state.country.name}`}
+                            </div>
+                        </div>
+                    </li>
+
+                    <li className="flex space-x-3 rtl:space-x-reverse">
+                        <div className="flex-none text-2xl text-default-600">
+                            <UsersRound />
+                        </div>
+                        <div className="flex-1">
+                            <div className="uppercase text-xs text-default-500 mb-1 leading-[12px]">
+                                GUESTS
+                            </div>
+                            <div className="text-base text-default-600 ">
+                                {event.totalGuests}
                             </div>
                         </div>
                     </li>

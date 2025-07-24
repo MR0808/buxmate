@@ -24,3 +24,52 @@ export const CreateEventSchemaOutput = z.object({
     timezone: z.string().min(1, 'Timezone is required'),
     currency: z.string().min(1, 'Currency is required')
 });
+
+export const AddGuestsSchema = z
+    .object({
+        emails: z.string().optional(),
+        phoneNumbers: z.string().optional()
+    })
+    .refine(
+        (data) => {
+            const hasEmails = data.emails && data.emails.trim().length > 0;
+            const hasPhones =
+                data.phoneNumbers && data.phoneNumbers.trim().length > 0;
+            return hasEmails || hasPhones;
+        },
+        {
+            message:
+                'Please provide at least one email address or phone number',
+            path: ['root']
+        }
+    );
+
+export const AddGuestsValidate = z
+    .object({
+        validEmails: z.array(z.string()).optional(),
+        invalidEmails: z.array(z.string()).optional(),
+        validPhoneNumbers: z
+            .array(
+                z.object({
+                    original: z.string(),
+                    formatted: z.string(),
+                    country: z.string().optional()
+                })
+            )
+            .optional(),
+        invalidPhoneNumbers: z.array(z.string()).optional()
+    })
+    .refine(
+        (data) => {
+            const hasValidEmails =
+                data.validEmails && data.validEmails.length > 0;
+            const hasValidPhones =
+                data.validPhoneNumbers && data.validPhoneNumbers.length > 0;
+            return hasValidEmails || hasValidPhones;
+        },
+        {
+            message:
+                'Please provide at least one valid email address or phone number',
+            path: ['root']
+        }
+    );

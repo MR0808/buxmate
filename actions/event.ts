@@ -6,7 +6,13 @@ import GithubSlugger, { slug } from 'github-slugger';
 import { prisma } from '@/lib/prisma';
 import { authCheckServer } from '@/lib/authCheck';
 import { ActionResult } from '@/types/global';
-import { CreateEventSchemaOutput } from '@/schemas/event';
+import {
+    CreateEventSchemaOutput,
+    AddGuestsValidate,
+    AddGuestsSchema
+} from '@/schemas/event';
+import { isValidEmail } from '@/utils/validateEmail';
+import { validatePhoneNumber } from '@/utils/validatePhoneNumber';
 
 const slugger = new GithubSlugger();
 
@@ -129,7 +135,7 @@ export const getEvent = async (slug: string) => {
         };
     }
     try {
-        const data = await prisma.event.findUnique({
+        const event = await prisma.event.findUnique({
             where: {
                 slug
             },
@@ -167,18 +173,161 @@ export const getEvent = async (slug: string) => {
             }
         });
 
-        if (!data) {
+        if (!event) {
             return {
                 success: false,
                 message: 'No event exists'
             };
         }
 
+        const image = event
+            ? await prisma.image.findUnique({
+                  where: {
+                      id: event.image
+                  },
+                  select: {
+                      id: true,
+                      image: true,
+                      imageName: true,
+                      imageType: true,
+                      relatedEntity: true,
+                      bucket: true,
+                      createdAt: true,
+                      updatedAt: true
+                  }
+              })
+            : null;
+
+        const data = {
+            ...event,
+            image: image || null // Replace the image string with the full image object
+        };
+
         return { success: true, message: 'Event retrieved', data };
     } catch (error) {
         return {
             success: false,
             message: 'An error occurred while retrieving the event'
+        };
+    }
+};
+
+export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
+    const userSession = await authCheckServer();
+
+    if (!userSession) {
+        return {
+            success: false,
+            message: 'Not authorised',
+            data: null
+        };
+    }
+
+    try {
+        const validatedFields = AddGuestsSchema.safeParse(values);
+
+        if (!validatedFields.success) {
+            return {
+                success: false,
+                message: 'Invalid fields',
+                data: null
+            };
+        }
+
+        const emailsText = values.emails || '';
+        const phoneNumbersText = values.phoneNumbers || '';
+
+        const emailList = emailsText
+            .split(/[,;\s\n]+/)
+            .map((email) => email.trim())
+            .filter((email) => email.length > 0);
+
+        const validEmails: string[] = [];
+        const invalidEmails: string[] = [];
+
+        emailList.forEach((email) => {
+            if (isValidEmail(email)) {
+                validEmails.push(email);
+            } else {
+                invalidEmails.push(email);
+            }
+        });
+
+        // Parse and validate phone numbers
+        const phoneList = phoneNumbersText
+            .split(/[,;\s\n]+/)
+            .map((phone) => phone.trim())
+            .filter((phone) => phone.length > 0);
+
+        const validPhoneNumbers: Array<{
+            original: string;
+            formatted: string;
+            country?: string;
+        }> = [];
+        const invalidPhoneNumbers: string[] = [];
+
+        phoneList.forEach((phone) => {
+            const validation = validatePhoneNumber(phone);
+            if (validation.isValid && validation.formatted) {
+                validPhoneNumbers.push({
+                    original: phone,
+                    formatted: validation.formatted,
+                    country: validation.country
+                });
+            } else {
+                invalidPhoneNumbers.push(phone);
+            }
+        });
+
+        const validatedData = AddGuestsValidate.parse({
+            validEmails: validEmails.length > 0 ? validEmails : undefined,
+            invalidEmails: invalidEmails.length > 0 ? invalidEmails : undefined,
+            validPhoneNumbers:
+                validPhoneNumbers.length > 0 ? validPhoneNumbers : undefined,
+            invalidPhoneNumbers:
+                invalidPhoneNumbers.length > 0 ? invalidPhoneNumbers : undefined
+        });
+
+        const validEmailCount = validatedData.validEmails?.length || 0;
+        const invalidEmailCount = validatedData.invalidEmails?.length || 0;
+        const validPhoneCount = validatedData.validPhoneNumbers?.length || 0;
+        const invalidPhoneCount =
+            validatedData.invalidPhoneNumbers?.length || 0;
+
+        let message = `Successfully processed ${validEmailCount} valid emails and ${validPhoneCount} valid phone numbers`;
+
+        if (invalidEmailCount > 0 || invalidPhoneCount > 0) {
+            message += `. Found ${invalidEmailCount} invalid emails and ${invalidPhoneCount} invalid phone numbers`;
+        }
+
+        const data = {
+            validatedData,
+            summary: {
+                validEmails: validEmailCount,
+                invalidEmails: invalidEmailCount,
+                validPhoneNumbers: validPhoneCount,
+                invalidPhoneNumbers: invalidPhoneCount
+            }
+        };
+
+        return {
+            success: true,
+            message,
+            data
+        };
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return {
+                success: false,
+                message: 'Validation failed',
+                data: null
+            };
+        }
+
+        return {
+            success: false,
+            message: 'An unexpected error occurred',
+            data: null
         };
     }
 };

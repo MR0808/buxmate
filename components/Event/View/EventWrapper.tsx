@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { SessionType, EventType } from '@/types/events';
+import AddGuests from '@/components/Event/View/AddGuests';
 
 const EventWrapper = ({
     children,
@@ -17,6 +19,7 @@ const EventWrapper = ({
     userSession: SessionType;
 }) => {
     const pathname = usePathname();
+    const [open, setOpen] = useState<boolean>(false);
     if (!event) return null;
 
     return (
@@ -32,6 +35,7 @@ const EventWrapper = ({
                 </Link>
                 {!pathname.includes('/activity/create') && (
                     <>
+                        <AddGuests open={open} setOpen={setOpen} />
                         <div className="flex items-center gap-4 flex-wrap">
                             <Link href={`/event/${event.slug}/activity/create`}>
                                 <Button className="flex-none cursor-pointer">
@@ -41,7 +45,10 @@ const EventWrapper = ({
                             </Link>
                         </div>
                         <div className="flex items-center gap-4 flex-wrap">
-                            <Button className="flex-none cursor-pointer">
+                            <Button
+                                className="flex-none cursor-pointer"
+                                onClick={() => setOpen(true)}
+                            >
                                 <Plus className="w-4 h-4 me-1" />
                                 <span>Add Guests</span>
                             </Button>

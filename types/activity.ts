@@ -14,3 +14,11 @@ export interface CreateActivityProps {
     event: EventType;
     userSession: SessionType | null;
 }
+
+export interface Activity {
+    activityName: string;
+    activityCost: number;
+    startTime: Date;
+    endTime: Date;
+    location: string;
+}
