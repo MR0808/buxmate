@@ -219,7 +219,8 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
         return {
             success: false,
             message: 'Not authorised',
-            data: null
+            data: null,
+            errors: null
         };
     }
 
@@ -230,7 +231,8 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
             return {
                 success: false,
                 message: 'Invalid fields',
-                data: null
+                data: null,
+                errors: null
             };
         }
 
@@ -238,7 +240,7 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
         const phoneNumbersText = values.phoneNumbers || '';
 
         const emailList = emailsText
-            .split(/[,;\s\n]+/)
+            .split(/[,\n]+/)
             .map((email) => email.trim())
             .filter((email) => email.length > 0);
 
@@ -255,7 +257,7 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
 
         // Parse and validate phone numbers
         const phoneList = phoneNumbersText
-            .split(/[,;\s\n]+/)
+            .split(/[,\n]+/)
             .map((phone) => phone.trim())
             .filter((phone) => phone.length > 0);
 
@@ -279,11 +281,18 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
             }
         });
 
+        const uniqueEmails = [...new Set(validEmails)];
+        const uniquePhoneNumbers = Array.from(
+            new Set(validPhoneNumbers.map((phone) => phone.formatted)),
+            (formatted) =>
+                validPhoneNumbers.find((phone) => phone.formatted === formatted)
+        );
+
         const validatedData = AddGuestsValidate.parse({
-            validEmails: validEmails.length > 0 ? validEmails : undefined,
+            validEmails: uniqueEmails.length > 0 ? uniqueEmails : undefined,
             invalidEmails: invalidEmails.length > 0 ? invalidEmails : undefined,
             validPhoneNumbers:
-                validPhoneNumbers.length > 0 ? validPhoneNumbers : undefined,
+                uniquePhoneNumbers.length > 0 ? uniquePhoneNumbers : undefined,
             invalidPhoneNumbers:
                 invalidPhoneNumbers.length > 0 ? invalidPhoneNumbers : undefined
         });
@@ -313,13 +322,15 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
         return {
             success: true,
             message,
-            data
+            data,
+            error: null
         };
     } catch (error) {
         if (error instanceof z.ZodError) {
             return {
                 success: false,
                 message: 'Validation failed',
+                errors: error.issues,
                 data: null
             };
         }
@@ -327,6 +338,7 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
         return {
             success: false,
             message: 'An unexpected error occurred',
+            errors: null,
             data: null
         };
     }
