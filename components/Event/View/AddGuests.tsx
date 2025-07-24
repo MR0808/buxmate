@@ -28,6 +28,7 @@ import { SubmitButton } from '@/components/Form/Buttons';
 import { AddGuestsProps, ValidationResult } from '@/types/events';
 import { AddGuestsSchema } from '@/schemas/event';
 import { addGuests } from '@/actions/event';
+import { Button } from '@/components/ui/button';
 
 const AddGuests = ({ open, setOpen }: AddGuestsProps) => {
     const [isPending, startTransition] = useTransition();
@@ -87,9 +88,9 @@ const AddGuests = ({ open, setOpen }: AddGuestsProps) => {
                     <DialogTitle>Add Guests</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    Add guests below either by email or phone number. All guests
-                    will receive an invite to the site if they aren&apos;t
-                    already a member, as well as added to your event.
+                    {lastResult
+                        ? 'Thank you. your guests have been invited. See below the results of which emails and phone numbers were accepted, and which need fixing.'
+                        : `Add guests below either by email or phone number. All guests will receive an invite to the site if they aren't already a member, as well as added to your event.`}
                 </DialogDescription>
                 {lastResult ? (
                     <>
@@ -193,6 +194,14 @@ const AddGuests = ({ open, setOpen }: AddGuestsProps) => {
                                     </div>
                                 </div>
                             )}
+                        <Button
+                            type="button"
+                            className="capitalize"
+                            size="lg"
+                            onClick={() => handleOpenChange(false)}
+                        >
+                            Close
+                        </Button>
                     </>
                 ) : (
                     <Form {...form}>
