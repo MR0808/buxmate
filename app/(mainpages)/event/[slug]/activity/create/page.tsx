@@ -48,7 +48,9 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
         date: data.date,
         slug: data.slug,
         host: data.host,
-        state: data.state
+        state: data.state,
+        totalCost: 0,
+        totalGuests: 0
     };
 
     return (
