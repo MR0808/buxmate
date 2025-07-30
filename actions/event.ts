@@ -2,6 +2,7 @@
 
 import * as z from 'zod';
 import GithubSlugger, { slug } from 'github-slugger';
+import { InvitationStatus } from '@/generated/prisma';
 
 import { prisma } from '@/lib/prisma';
 import { authCheckServer } from '@/lib/authCheck';
@@ -13,6 +14,7 @@ import {
 } from '@/schemas/event';
 import { isValidEmail } from '@/utils/validateEmail';
 import { validatePhoneNumber } from '@/utils/validatePhoneNumber';
+import { InviteGuestsResult } from '@/types/events';
 
 const slugger = new GithubSlugger();
 
@@ -169,7 +171,7 @@ export const getEvent = async (slug: string) => {
                     include: { place: true },
                     orderBy: { startTime: 'asc' }
                 },
-                guests: { orderBy: { name: 'asc' } }
+                invitations: true
             }
         });
 
@@ -212,7 +214,10 @@ export const getEvent = async (slug: string) => {
     }
 };
 
-export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
+export const addGuests = async (
+    values: z.infer<typeof AddGuestsSchema>,
+    eventSlug: string
+) => {
     const userSession = await authCheckServer();
 
     if (!userSession) {
@@ -225,6 +230,20 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
     }
 
     try {
+        const event = await prisma.event.findUnique({
+            where: { slug: eventSlug },
+            select: { id: true, hostId: true }
+        });
+
+        if (!event) {
+            return {
+                success: false,
+                message: 'Invalid event',
+                data: null,
+                errors: null
+            };
+        }
+
         const validatedFields = AddGuestsSchema.safeParse(values);
 
         if (!validatedFields.success) {
@@ -308,6 +327,162 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
         if (invalidEmailCount > 0 || invalidPhoneCount > 0) {
             message += `. Found ${invalidEmailCount} invalid emails and ${invalidPhoneCount} invalid phone numbers`;
         }
+        const senderId = event.hostId;
+
+        const results: InviteGuestsResult = {
+            success: [],
+            errors: [],
+            warnings: []
+        };
+
+        for (const email of validEmails) {
+            try {
+                // Check for existing invitations and potential duplicates
+                const duplicateCheck = await checkForDuplicateInvitations(
+                    event.id,
+                    email,
+                    undefined
+                );
+
+                if (duplicateCheck.length > 0) {
+                    const existingInvitation = duplicateCheck.find(
+                        (inv) => inv.email === email
+                    );
+                    if (existingInvitation) {
+                        results.success.push({
+                            type: 'email',
+                            value: email,
+                            status: 'already_invited'
+                        });
+                        continue;
+                    }
+
+                    // Check if this email might belong to someone already invited by phone
+                    const potentialDuplicate = duplicateCheck.find(
+                        (inv) =>
+                            inv.recipient?.email === email ||
+                            (inv.phoneNumber && inv.recipient?.email === email)
+                    );
+
+                    if (potentialDuplicate) {
+                        results.warnings.push({
+                            type: 'email',
+                            value: email,
+                            warning:
+                                'This person may already be invited by phone number'
+                        });
+                    }
+                }
+
+                // Check if user exists
+                const existingUser = await prisma.user.findUnique({
+                    where: { email }
+                });
+
+                // Create invitation
+                await prisma.eventInvitation.create({
+                    data: {
+                        eventId: event.id,
+                        senderId,
+                        email,
+                        recipientId: existingUser?.id,
+                        message,
+                        expiresAt: new Date(
+                            Date.now() + 30 * 24 * 60 * 60 * 1000
+                        ) // 30 days
+                    }
+                });
+
+                results.success.push({
+                    type: 'email',
+                    value: email,
+                    status: existingUser ? 'existing_user' : 'new_invitation'
+                });
+            } catch (error) {
+                results.errors.push({
+                    type: 'email',
+                    value: email,
+                    error:
+                        error instanceof Error ? error.message : 'Unknown error'
+                });
+            }
+        }
+
+        for (const phoneNumber of validPhoneNumbers) {
+            try {
+                // Check for existing invitations and potential duplicates
+                const duplicateCheck = await checkForDuplicateInvitations(
+                    event.id,
+                    undefined,
+                    phoneNumber.formatted
+                );
+
+                if (duplicateCheck.length > 0) {
+                    const existingInvitation = duplicateCheck.find(
+                        (inv) => inv.phoneNumber === phoneNumber.formatted
+                    );
+                    if (existingInvitation) {
+                        results.success.push({
+                            type: 'phone',
+                            value: phoneNumber.formatted,
+                            status: 'already_invited'
+                        });
+                        continue;
+                    }
+
+                    // Check if this phone might belong to someone already invited by email
+                    const potentialDuplicate = duplicateCheck.find(
+                        (inv) =>
+                            inv.recipient?.phoneNumber ===
+                                phoneNumber.formatted ||
+                            (inv.email &&
+                                inv.recipient?.phoneNumber ===
+                                    phoneNumber.formatted)
+                    );
+
+                    if (potentialDuplicate) {
+                        results.warnings.push({
+                            type: 'phone',
+                            value: phoneNumber.formatted,
+                            warning:
+                                'This person may already be invited by email'
+                        });
+                    }
+                }
+
+                // Check if user exists
+                const existingUser = await prisma.user.findUnique({
+                    where: { phoneNumber: phoneNumber.formatted }
+                });
+
+                // Create invitation
+                await prisma.eventInvitation.create({
+                    data: {
+                        eventId: event.id,
+                        senderId,
+                        phoneNumber: phoneNumber.formatted,
+                        recipientId: existingUser?.id,
+                        message,
+                        expiresAt: new Date(
+                            Date.now() + 30 * 24 * 60 * 60 * 1000
+                        ) // 30 days
+                    }
+                });
+
+                results.success.push({
+                    type: 'phone',
+                    value: phoneNumber.formatted,
+                    status: existingUser ? 'existing_user' : 'new_invitation'
+                });
+            } catch (error) {
+                results.errors.push({
+                    type: 'phone',
+                    value: phoneNumber.formatted,
+                    error:
+                        error instanceof Error ? error.message : 'Unknown error'
+                });
+            }
+        }
 
         const data = {
             validatedData,
@@ -343,3 +518,70 @@ export const addGuests = async (values: z.infer<typeof AddGuestsSchema>) => {
         };
     }
 };
+
+/**
+ * Get all active invitations for a user (excluding merged ones)
+ */
+export async function getUserActiveInvitations(userId: string) {
+    return await prisma.eventInvitation.findMany({
+        where: {
+            recipientId: userId,
+            status: {
+                in: [InvitationStatus.PENDING, InvitationStatus.ACCEPTED]
+            }
+        },
+        include: {
+            event: {
+                select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                    description: true,
+                    date: true,
+                    image: true
+                }
+            },
+            sender: {
+                select: {
+                    name: true,
+                    lastName: true
+                }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+}
+
+/**
+ * Check for potential duplicate invitations before sending
+ */
+export async function checkForDuplicateInvitations(
+    eventId: string,
+    email?: string,
+    phoneNumber?: string
+) {
+    if (!email && !phoneNumber) return [];
+
+    const existingInvitations = await prisma.eventInvitation.findMany({
+        where: {
+            eventId,
+            status: {
+                in: [InvitationStatus.PENDING, InvitationStatus.ACCEPTED]
+            },
+            OR: [
+                ...(email ? [{ email }] : []),
+                ...(phoneNumber ? [{ phoneNumber }] : [])
+            ]
+        },
+        include: {
+            recipient: {
+                select: {
+                    email: true,
+                    phoneNumber: true
+                }
+            }
+        }
+    });
+
+    return existingInvitations;
+}

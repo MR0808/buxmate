@@ -32,6 +32,14 @@ enum ImageType {
   EVENT
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  MERGED
+}
+
 model User {
   id        String   @id @default(uuid())
   createdAt DateTime
@@ -47,22 +55,24 @@ model User {
   banReason     String?
   banExpires    DateTime?
 
-  sessions           Session[]
-  accounts           Account[]
-  gender             Gender?
-  dateOfBirth        DateTime?
-  phoneNumber        String?             @unique
-  timezone           String              @default("UTC")
-  country            Country?            @relation(fields: [countryId], references: [id])
-  countryId          String?
-  state              State?              @relation(fields: [stateId], references: [id])
-  stateId            String?
-  emailChangeRecords EmailChangeRecord[]
-  phoneChangeRecords PhoneChangeRecord[]
-  auditLogs          AuditLog[]
-  hostedEvents       Event[]             @relation("EventHost")
-  guestEvents        Event[]             @relation("EventGuests")
-  guestActivities    Activity[]          @relation("ActivityGuests")
+  sessions            Session[]
+  accounts            Account[]
+  gender              Gender?
+  dateOfBirth         DateTime?
+  phoneNumber         String?             @unique
+  phoneVerified       Boolean             @default(false)
+  timezone            String              @default("UTC")
+  country             Country?            @relation(fields: [countryId], references: [id])
+  countryId           String?
+  state               State?              @relation(fields: [stateId], references: [id])
+  stateId             String?
+  emailChangeRecords  EmailChangeRecord[]
+  phoneChangeRecords  PhoneChangeRecord[]
+  auditLogs           AuditLog[]
+  hostedEvents        Event[]             @relation("EventHost")
+  sentInvitations     EventInvitation[]   @relation("InvitationSender")
+  receivedInvitations EventInvitation[]   @relation("InvitationRecipient")
+  guestActivities     Activity[]          @relation("ActivityGuests")
 
   @@map("users")
 }
@@ -223,20 +233,20 @@ model Currency {
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String            @id @default(cuid())
+  slug        String            @unique
   date        DateTime
   title       String
   description String
-  status      Status   @default(DRAFT)
+  status      Status            @default(DRAFT)
   image       String
-  state       State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  state       State             @relation(fields: [stateId], references: [id], onDelete: Cascade)
   stateId     String
-  currency    Currency @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  currency    Currency          @relation(fields: [currencyId], references: [id], onDelete: Cascade)
   currencyId  String
   hostId      String
-  host        User     @relation("EventHost", fields: [hostId], references: [id])
-  guests      User[]   @relation("EventGuests")
+  host        User              @relation("EventHost", fields: [hostId], references: [id])
+  invitations EventInvitation[]
   timezone    String
 
   createdAt  DateTime   @default(now()) @map("created_at")
@@ -244,6 +254,40 @@ model Event {
   activities Activity[]
 
   @@map("events")
+}
+
+model EventInvitation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String
+  sender      User             @relation("InvitationSender", fields: [senderId], references: [id])
+  senderId    String
+  recipient   User?            @relation("InvitationRecipient", fields: [recipientId], references: [id])
+  recipientId String?
+  email       String?
+  phoneNumber String?
+  status      InvitationStatus @default(PENDING)
+  inviteToken String           @unique @default(cuid())
+  expiresAt   DateTime?
+  respondedAt DateTime?
+  message     String?
+
+  mergedIntoId String? // Points to the "primary" invitation when duplicates are merged
+  mergedFrom   EventInvitation[] @relation("MergedInvitations")
+  mergedInto   EventInvitation?  @relation("MergedInvitations", fields: [mergedIntoId], references: [id])
+
+  // Updated constraints - removed the recipientId unique constraint to allow multiple pending invitations
+  @@unique([eventId, email])
+  @@unique([eventId, phoneNumber])
+  @@index([inviteToken])
+  @@index([status])
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([recipientId])
+  @@map("event_invitations")
 }
 
 model Image {

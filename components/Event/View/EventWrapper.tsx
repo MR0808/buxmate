@@ -35,7 +35,11 @@ const EventWrapper = ({
                 </Link>
                 {!pathname.includes('/activity/create') && (
                     <>
-                        <AddGuests open={open} setOpen={setOpen} />
+                        <AddGuests
+                            open={open}
+                            setOpen={setOpen}
+                            eventSlug={event.slug}
+                        />
                         <div className="flex items-center gap-4 flex-wrap">
                             <Link href={`/event/${event.slug}/activity/create`}>
                                 <Button className="flex-none cursor-pointer">

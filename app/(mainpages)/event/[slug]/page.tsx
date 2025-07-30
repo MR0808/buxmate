@@ -66,7 +66,7 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
         date: data.date,
         state: data.state,
         totalCost,
-        totalGuests: data.guests.length
+        totalGuests: data.invitations.length
     };
 
     return (

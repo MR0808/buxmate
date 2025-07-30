@@ -59,6 +59,7 @@ export interface EventInformationProps {
 export interface AddGuestsProps {
     open: boolean;
     setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    eventSlug: string;
 }
 
 export type ValidationResult = {
@@ -71,3 +72,27 @@ export type ValidationResult = {
     }>;
     invalidPhoneNumbers?: string[];
 };
+
+export interface InviteGuestsResult {
+    success: Array<{
+        type: 'email' | 'phone';
+        value: string;
+        status:
+            | 'existing_user'
+            | 'new_invitation'
+            | 'already_invited'
+            | 'potential_duplicate';
+    }>;
+    errors: Array<{ type: 'email' | 'phone'; value: string; error: string }>;
+    warnings: Array<{
+        type: 'email' | 'phone';
+        value: string;
+        warning: string;
+    }>;
+}
+
+export interface MergeResult {
+    mergedInvitations: number;
+    acceptedEvents: string[];
+    errors: string[];
+}

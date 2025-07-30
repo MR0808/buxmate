@@ -30,7 +30,7 @@ import { AddGuestsSchema } from '@/schemas/event';
 import { addGuests } from '@/actions/event';
 import { Button } from '@/components/ui/button';
 
-const AddGuests = ({ open, setOpen }: AddGuestsProps) => {
+const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
     const [isPending, startTransition] = useTransition();
     const [lastResult, setLastResult] = useState<ValidationResult | null>(null);
 
@@ -44,7 +44,7 @@ const AddGuests = ({ open, setOpen }: AddGuestsProps) => {
 
     function onSubmit(values: z.infer<typeof AddGuestsSchema>) {
         startTransition(async () => {
-            const result = await addGuests(values);
+            const result = await addGuests(values, eventSlug);
 
             if (result.success && result.data) {
                 toast.success(result.message);

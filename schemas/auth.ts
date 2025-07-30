@@ -1,7 +1,25 @@
 import * as z from 'zod';
+import libphonenumber from 'google-libphonenumber';
+
+const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
+
+const phoneNumberSchema = z
+    .string()
+    .nonempty({ message: 'Mobile number is required' })
+    .refine(
+        (number) => {
+            try {
+                const phoneNumber = phoneUtil.parse(number);
+                return phoneUtil.isValidNumber(phoneNumber);
+            } catch (error) {
+                return false;
+            }
+        },
+        { message: 'Invalid mobile number' }
+    );
 
 export const LoginSchema = z.object({
-    email: z.string().email({
+    email: z.email({
         message: 'Email is required'
     }),
     password: z.string().min(1, {
@@ -13,7 +31,7 @@ export const LoginSchema = z.object({
 });
 
 export const RegisterSchema = z.object({
-    email: z.string().email({
+    email: z.email({
         message: 'Email is required'
     }),
     name: z.string().min(1, {
@@ -65,7 +83,7 @@ export const RegisterSchema = z.object({
 // });
 
 export const EmailSchema = z.object({
-    email: z.string().email({
+    email: z.email({
         message: 'Email must be valid'
     })
 });
