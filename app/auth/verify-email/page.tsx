@@ -1,23 +1,38 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-import MultiStepRegisterForm from '@/components/Auth/Register/MultiStepRegisterForm';
-import { getCountryByName } from '@/lib/location';
-import { isLoggedIn } from '@/lib/authCheck';
+import { auth } from '@/lib/auth';
+
+import EmailVerificationForm from '@/components/Auth/EmailVerificationForm';
+import { resendEmailOTP } from '@/actions/verify-email';
 
 export function generateMetadata(): Metadata {
     return {
-        title: 'Register',
-        description: 'Buxmate Registration'
+        title: 'Email Verification',
+        description: 'Buxmate Verification'
     };
 }
 
-const RegisterPage = async () => {
-    await isLoggedIn();
+const VerifyEmailPage = async () => {
+    const headerList = await headers();
 
-    const defaultCountry = await getCountryByName('Australia');
-    if (!defaultCountry) return null;
+    const session = await auth.api.getSession({
+        headers: headerList
+    });
+
+    if (!session) {
+        return redirect('/auth/login');
+    }
+
+    if (session && session.user.emailVerified) {
+        return redirect('/');
+    }
+
+    await resendEmailOTP(session.user.id);
+
     return (
         <div
             className="flex w-full items-center overflow-hidden min-h-dvh h-dvh basis-full bg-cover bg-no-repeat bg-center z-0"
@@ -52,18 +67,10 @@ const RegisterPage = async () => {
                                 />
                             </Link>
                         </div>
-                        <MultiStepRegisterForm
-                            defaultCountry={defaultCountry}
+                        <EmailVerificationForm
+                            email={session.user.email}
+                            userId={session.user.id}
                         />
-                        <div className="mx-auto font-normal text-default-500  2xl:mt-12 mt-6 uppercase text-sm text-center">
-                            Already have an account?
-                            <Link
-                                href="/auth/login"
-                                className="text-default-900 font-medium hover:underline ps-1"
-                            >
-                                Login
-                            </Link>
-                        </div>
                     </div>
                 </div>
                 <div className="absolute bottom-0 lg:block hidden text-white py-5 px-5 text-xl w-full">
@@ -75,4 +82,4 @@ const RegisterPage = async () => {
     );
 };
 
-export default RegisterPage;
+export default VerifyEmailPage;

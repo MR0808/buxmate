@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Metadata } from 'next';
 
 import ForgotPasswordForm from '@/components/Auth/ForgotPasswordForm';
+import { isLoggedIn } from '@/lib/authCheck';
 
 export function generateMetadata(): Metadata {
     return {
@@ -11,7 +12,9 @@ export function generateMetadata(): Metadata {
     };
 }
 
-const ForgotPasswordPage = () => {
+const ForgotPasswordPage = async () => {
+    await isLoggedIn();
+
     return (
         <>
             <div

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useForm, SubmitErrorHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useTransition, useState } from 'react';
+import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -42,12 +42,24 @@ const LoginForm = () => {
 
     const onSubmit = (values: z.infer<typeof LoginSchema>) => {
         startTransition(async () => {
-            const { error } = await login(values);
+            // const { error, emailVerified, phoneVerified } = await login(values);
+            const data = await login(values);
+            console.log(data);
+
+            const { error, emailVerified, phoneVerified } = data;
+
             if (error) {
                 toast.error(error, { position: 'top-center' });
             } else {
                 toast.success('Log in successful', { position: 'top-center' });
-                router.push(callbackURL);
+
+                if (!emailVerified) {
+                    router.push('/auth/verify-email');
+                } else if (!phoneVerified) {
+                    router.push('/auth/verify-phone');
+                } else if (emailVerified && phoneVerified) {
+                    router.push(callbackURL);
+                }
             }
         });
     };

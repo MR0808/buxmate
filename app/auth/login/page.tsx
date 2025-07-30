@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import LoginForm from '@/components/Auth/LoginForm';
-import SocialLogin from '@/components/Auth/SocialLogin';
+import { isLoggedIn } from '@/lib/authCheck';
 
 export function generateMetadata(): Metadata {
     return {
@@ -13,7 +13,8 @@ export function generateMetadata(): Metadata {
     };
 }
 
-const LoginPage = () => {
+const LoginPage = async () => {
+    await isLoggedIn();
     return (
         <>
             <div
@@ -61,14 +62,6 @@ const LoginPage = () => {
                             >
                                 <LoginForm />
                             </Suspense>
-                            <div className=" relative border-b-[#9AA2AF] border-opacity-[16%] border-b pt-6">
-                                <div className=" absolute inline-block  bg-default-50 dark:bg-default-100 left-1/2 top-1/2 transform -translate-x-1/2 px-4 min-w-max text-sm  text-default-500  font-normal ">
-                                    or
-                                </div>
-                            </div>
-                            <div className="max-w-[242px] mx-auto mt-8 w-full">
-                                <SocialLogin action="login" />
-                            </div>
                             <div className="mx-auto font-normal text-default-500  2xl:mt-12 mt-6 uppercase text-sm text-center">
                                 {` Don't`} have an account?
                                 <Link

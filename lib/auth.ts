@@ -3,40 +3,18 @@ import { createAuthMiddleware } from 'better-auth/api';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
 import { UserRole, Gender } from '@/generated/prisma';
-import {
-    admin,
-    customSession,
-    openAPI,
-    phoneNumber
-} from 'better-auth/plugins';
+import { admin, customSession, openAPI } from 'better-auth/plugins';
 
 import { prisma } from '@/lib/prisma';
 import { hashPassword, verifyPassword } from '@/lib/argon2';
 import { sendVerificationEmail, sendResetEmail } from '@/lib/mail';
 import { ac, roles } from '@/lib/permissions';
-import {
-    logEmailVerified,
-    logEmailVerifyRequested,
-    logPasswordResetCompleted,
-    logPasswordResetRequested
-} from '@/actions/audit/audit-auth';
+import { logPasswordResetRequested } from '@/actions/audit/audit-auth';
 
 const options = {
     database: prismaAdapter(prisma, {
         provider: 'postgresql' // or "mysql", "postgresql", ...etc
     }),
-    socialProviders: {
-        google: {
-            clientId: String(process.env.GOOGLE_CLIENT_ID),
-            clientSecret: String(process.env.GOOGLE_CLIENT_SECRET),
-            mapProfileToUser: (profile) => {
-                return {
-                    name: profile.given_name,
-                    lastName: profile.family_name
-                };
-            }
-        }
-    },
     emailAndPassword: {
         enabled: true,
         password: {
@@ -44,7 +22,7 @@ const options = {
             verify: verifyPassword
         },
         autoSignIn: false,
-        requireEmailVerification: true,
+        requireEmailVerification: false,
         sendResetPassword: async ({ user, url }) => {
             await sendResetEmail({
                 email: user.email,
@@ -53,29 +31,10 @@ const options = {
             });
         }
     },
-    emailVerification: {
-        sendOnSignUp: true,
-        autoSignInAfterVerification: true,
-        sendVerificationEmail: async ({ user, url }) => {
-            await logEmailVerifyRequested(user.id, user.email);
-            const link = new URL(url);
-            link.searchParams.set('callbackURL', '/auth/login');
-            await sendVerificationEmail({
-                email: user.email,
-                link: String(link)
-            });
-        }
-    },
     hooks: {
         after: createAuthMiddleware(async (ctx) => {
-            const newSession = ctx.context.newSession;
-            if (ctx.path === '/verify-email') {
-                if (newSession)
-                    await logEmailVerified(
-                        newSession.user.id,
-                        newSession.user.email
-                    );
-            } else if (ctx.path === '/forget-password') {
+            // const newSession = ctx.context.newSession;
+            if (ctx.path === '/forget-password') {
                 await logPasswordResetRequested(ctx.body.email);
             }
         })
@@ -121,6 +80,14 @@ const options = {
             },
             phoneNumber: {
                 type: 'string',
+                required: false
+            },
+            phoneVerified: {
+                type: 'boolean',
+                required: false
+            },
+            emailVerified: {
+                type: 'boolean',
                 required: false
             }
         }

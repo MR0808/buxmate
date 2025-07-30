@@ -47,6 +47,34 @@ export async function logEmailVerified(
     });
 }
 
+export async function logPhoneVerifyRequested(
+    userId: string,
+    phoneNumber: string,
+    metadata?: Record<string, any>
+): Promise<AuditLogResult> {
+    return await logAuditEvent({
+        userId,
+        action: 'user.phone_verify_requested',
+        category: 'authentication',
+        description: 'User reuqested to verify their phone',
+        metadata: { ...metadata, phoneNumber }
+    });
+}
+
+export async function logPhoneVerified(
+    userId: string,
+    phoneNumber: string,
+    metadata?: Record<string, any>
+): Promise<AuditLogResult> {
+    return await logAuditEvent({
+        userId,
+        action: 'user.phone_verified',
+        category: 'authentication',
+        description: 'User verified their phone',
+        metadata: { ...metadata, phoneNumber }
+    });
+}
+
 export async function logUserLogin(
     userId: string,
     metadata?: Record<string, any>

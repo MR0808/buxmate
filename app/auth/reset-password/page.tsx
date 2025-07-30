@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Metadata } from 'next';
 
 import ResetPasswordForm from '@/components/Auth/ResetPasswordForm';
+import { isLoggedIn } from '@/lib/authCheck';
 
 export function generateMetadata(): Metadata {
     return {
@@ -17,6 +18,8 @@ const ResetPasswordPage = async ({
 }: {
     searchParams: Promise<{ token: string }>;
 }) => {
+    await isLoggedIn();
+
     const token = (await searchParams).token;
 
     if (!token) redirect('/auth/login');

@@ -5,12 +5,18 @@ import { auth } from '@/lib/auth';
 import { APIError } from 'better-auth/api';
 import { InvitationStatus } from '@/generated/prisma';
 
-import { RegisterSchema } from '@/schemas/auth';
+import { RegisterSchema } from '@/schemas/register';
 import { prisma } from '@/lib/prisma';
-import { logUserRegistered } from '@/actions/audit/audit-auth';
+import {
+    logUserRegistered,
+    logEmailVerifyRequested
+} from '@/actions/audit/audit-auth';
 import { MergeResult } from '@/types/events';
+import { generateOTP, sendEmailOTP } from '@/lib/otp';
 
-export const register = async (values: z.infer<typeof RegisterSchema>) => {
+export const registerInitial = async (
+    values: z.infer<typeof RegisterSchema>
+) => {
     const validatedFields = RegisterSchema.safeParse(values);
 
     if (!validatedFields.success) {
@@ -20,6 +26,14 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     const { name, lastName, email, password } = validatedFields.data;
 
     try {
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (existingUser) {
+            return { error: 'An account with this email already exists.' };
+        }
+
         const data = await auth.api.signUpEmail({
             body: {
                 name,
@@ -30,24 +44,27 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
             }
         });
 
-        const user = await prisma.user.findUnique({
-            where: { id: data.user.id }
+        const otp = generateOTP();
+        const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        await prisma.verification.create({
+            data: {
+                identifier: `email-otp:${data.user.id}`,
+                value: otp,
+                expiresAt
+            }
         });
 
-        if (!user) return { error: 'Internal Server Error' };
-
-        const mergeResult = await mergeDuplicateInvitations(
-            user.id,
-            user.email,
-            user.phoneNumber || undefined
-        );
+        await sendEmailOTP(email, otp, name);
 
         await logUserRegistered(data.user.id, {
             registrationMethod: 'email',
             emailVerified: false
         });
 
-        return { error: null };
+        await logEmailVerifyRequested(data.user.id, data.user.email);
+
+        return { userId: data.user.id, error: null };
     } catch (err) {
         if (err instanceof APIError) {
             return { error: err.message };

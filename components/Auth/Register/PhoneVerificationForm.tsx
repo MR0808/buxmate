@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Mail, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { MessageSquare, RefreshCw } from 'lucide-react';
+import parsePhoneNumber from 'libphonenumber-js';
 
 import {
     Form,
@@ -21,31 +21,27 @@ import {
     InputOTPSlot
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
-import { verifyEmailOTP, resendEmailOTP } from '@/actions/verify-email';
-import { EmailVerificationFormProps } from '@/types/auth';
+import { verifyPhoneOTP, resendPhoneOTP } from '@/actions/phone-verification';
+import { PhoneVerificationFormProps } from '@/types/register';
 import { OTPSchema } from '@/schemas/register';
-import { authClient } from '@/lib/auth-client';
 
-const EmailVerificationForm = ({
+const PhoneVerificationForm = ({
+    userId,
+    phoneNumber,
     email,
-    userId
-}: EmailVerificationFormProps) => {
+    password,
+    onNext
+}: PhoneVerificationFormProps) => {
     const [isPending, startTransition] = useTransition();
     const [isResending, setIsResending] = useState(false);
     const [countdown, setCountdown] = useState(0);
-    const router = useRouter();
-
-    const {
-        data: session,
-        refetch //refetch the session
-    } = authClient.useSession();
+    const phoneNumberFormat = parsePhoneNumber(phoneNumber);
 
     const form = useForm<z.infer<typeof OTPSchema>>({
         resolver: zodResolver(OTPSchema),
         defaultValues: { otp: '' }
     });
 
-    // Countdown timer for resend button
     useEffect(() => {
         if (countdown > 0) {
             const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -54,58 +50,55 @@ const EmailVerificationForm = ({
     }, [countdown]);
 
     const onSubmit = (values: z.infer<typeof OTPSchema>) => {
-        if (!userId) {
-            toast.error('User ID not found. Please start registration again.');
-            return;
-        }
-
         startTransition(async () => {
-            const result = await verifyEmailOTP(userId, values.otp);
+            const result = await verifyPhoneOTP(
+                userId,
+                values.otp,
+                email,
+                password
+            );
             if (result.error) {
                 toast.error(result.error, { position: 'top-center' });
                 form.setError('otp', { message: result.error });
             } else {
-                toast.success('Email verified successfully!', {
+                toast.success('Phone number verified successfully!', {
                     position: 'top-center'
                 });
-                await authClient.updateUser({ emailVerified: true });
-                refetch();
-                if (!session?.user.phoneVerified) {
-                    router.push('/auth/verify-phone');
-                } else {
-                    router.push('/');
-                }
+                onNext();
             }
         });
     };
 
     const handleResendOTP = async () => {
-        if (!userId || countdown > 0) return;
+        if (countdown > 0) return;
 
         setIsResending(true);
-        const result = await resendEmailOTP(userId);
+        const result = await resendPhoneOTP(userId);
         setIsResending(false);
 
         if (result.error) {
             toast.error(result.error, { position: 'top-center' });
         } else {
-            toast.success('New OTP sent to your email!', {
-                position: 'top-center'
-            });
-            setCountdown(60); // 60 second cooldown
+            toast.success('New SMS code sent!', { position: 'top-center' });
+            setCountdown(60);
             form.reset();
         }
     };
 
     return (
-        <div>
+        <div className="space-y-6">
             <div className="text-center 2xl:mb-10 mb-5">
                 <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Mail className="w-8 h-8 text-blue-600" />
+                    <MessageSquare className="w-8 h-8 text-purple-600" />
                 </div>
-                <h4 className="font-medium">Verify Your Email</h4>
+                <h4 className="font-medium">Verify Your Phone</h4>
                 <div className="text-default-500  text-base">
-                    We&apos;ve sent a 6-digit code to <strong>{email}</strong>
+                    We&apos;ve sent a 6-digit code to{' '}
+                    <strong>
+                        {phoneNumberFormat
+                            ? phoneNumberFormat.formatNational()
+                            : ''}
+                    </strong>
                 </div>
                 <div className="text-default-500  text-base">
                     Please enter it below
@@ -147,7 +140,7 @@ const EmailVerificationForm = ({
                             className="w-full"
                             disabled={isPending}
                         >
-                            {isPending ? 'Verifying...' : 'Verify Email'}
+                            {isPending ? 'Verifying...' : 'Verify Phone Number'}
                         </Button>
 
                         <div className="text-center">
@@ -175,4 +168,4 @@ const EmailVerificationForm = ({
     );
 };
 
-export default EmailVerificationForm;
+export default PhoneVerificationForm;

@@ -28,24 +28,37 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
             }
         });
 
+        const user = await prisma.user.findUnique({
+            where: { id: data.user.id },
+            select: { phoneVerified: true }
+        });
+
+        if (!user) {
+            return { error: 'Invalid user!' };
+        }
+
         await logUserLogin(data.user.id, {
             loginMethod: 'email',
             rememberMe
         });
 
-        return { error: null };
-    } catch (err) {
+        return {
+            error: null,
+            emailVerified: data.user.emailVerified,
+            phoneVerified: user.phoneVerified
+        };
+    } catch (err: any) {
         if (err instanceof APIError) {
             const errCode = err.body ? (err.body.code as ErrorCode) : 'UNKNOWN';
+            console.log(errCode);
 
             switch (errCode) {
                 case 'EMAIL_NOT_VERIFIED':
-                    redirect('/auth/verify?error=email_not_verified');
+                    redirect('/auth/verify-email');
                 default:
                     return { error: err.message };
             }
         }
-
         return { error: 'Internal Server Error' };
     }
 };

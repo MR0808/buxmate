@@ -14,6 +14,8 @@ export type AuditAction =
     | 'user.registered'
     | 'user.email_verify_requested'
     | 'user.email_verified'
+    | 'user.phone_verify_requested'
+    | 'user.phone_verified'
     | 'user.login'
     | 'user.logout'
     | 'user.login_failed'

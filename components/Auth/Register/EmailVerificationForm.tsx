@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Mail, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 import {
     Form,
@@ -22,23 +21,17 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { verifyEmailOTP, resendEmailOTP } from '@/actions/verify-email';
-import { EmailVerificationFormProps } from '@/types/auth';
+import { EmailVerificationFormProps } from '@/types/register';
 import { OTPSchema } from '@/schemas/register';
-import { authClient } from '@/lib/auth-client';
 
 const EmailVerificationForm = ({
     email,
-    userId
+    userId,
+    onNext
 }: EmailVerificationFormProps) => {
     const [isPending, startTransition] = useTransition();
     const [isResending, setIsResending] = useState(false);
     const [countdown, setCountdown] = useState(0);
-    const router = useRouter();
-
-    const {
-        data: session,
-        refetch //refetch the session
-    } = authClient.useSession();
 
     const form = useForm<z.infer<typeof OTPSchema>>({
         resolver: zodResolver(OTPSchema),
@@ -68,13 +61,7 @@ const EmailVerificationForm = ({
                 toast.success('Email verified successfully!', {
                     position: 'top-center'
                 });
-                await authClient.updateUser({ emailVerified: true });
-                refetch();
-                if (!session?.user.phoneVerified) {
-                    router.push('/auth/verify-phone');
-                } else {
-                    router.push('/');
-                }
+                onNext(userId);
             }
         });
     };
