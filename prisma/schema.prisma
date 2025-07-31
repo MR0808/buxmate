@@ -70,9 +70,9 @@ model User {
   phoneChangeRecords  PhoneChangeRecord[]
   auditLogs           AuditLog[]
   hostedEvents        Event[]             @relation("EventHost")
-  sentInvitations     EventInvitation[]   @relation("InvitationSender")
-  receivedInvitations EventInvitation[]   @relation("InvitationRecipient")
   guestActivities     Activity[]          @relation("ActivityGuests")
+  sentInvitations     Invitation[]        @relation("InvitationSender")
+  receivedInvitations Invitation[]        @relation("InvitationRecipient")
 
   @@map("users")
 }
@@ -233,61 +233,56 @@ model Currency {
 }
 
 model Event {
-  id          String            @id @default(cuid())
-  slug        String            @unique
+  id          String   @id @default(cuid())
+  slug        String   @unique
   date        DateTime
   title       String
   description String
-  status      Status            @default(DRAFT)
+  status      Status   @default(DRAFT)
   image       String
-  state       State             @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  state       State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
   stateId     String
-  currency    Currency          @relation(fields: [currencyId], references: [id], onDelete: Cascade)
+  currency    Currency @relation(fields: [currencyId], references: [id], onDelete: Cascade)
   currencyId  String
   hostId      String
-  host        User              @relation("EventHost", fields: [hostId], references: [id])
-  invitations EventInvitation[]
+  host        User     @relation("EventHost", fields: [hostId], references: [id])
   timezone    String
 
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
-  activities Activity[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  activities  Activity[]
+  invitations Invitation[]
 
   @@map("events")
 }
 
-model EventInvitation {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Invitation {
+  id            String           @id @default(cuid())
+  phoneNumber   String
+  status        InvitationStatus @default(PENDING)
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId       String
+  sender        User             @relation("InvitationSender", fields: [senderId], references: [id])
+  senderId      String
+  recipient     User?            @relation("InvitationRecipient", fields: [recipientId], references: [id])
+  recipientId   String?
+  recipientName String?
+  smsMessageId  String?
+  sentAt        DateTime?
+  respondedAt   DateTime?
+  expiresAt     DateTime?
+  inviteToken   String?          @unique
+  metadata      Json             @default("{}")
 
-  event       Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId     String
-  sender      User             @relation("InvitationSender", fields: [senderId], references: [id])
-  senderId    String
-  recipient   User?            @relation("InvitationRecipient", fields: [recipientId], references: [id])
-  recipientId String?
-  email       String?
-  phoneNumber String?
-  status      InvitationStatus @default(PENDING)
-  inviteToken String           @unique @default(cuid())
-  expiresAt   DateTime?
-  respondedAt DateTime?
-  message     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  mergedIntoId String? // Points to the "primary" invitation when duplicates are merged
-  mergedFrom   EventInvitation[] @relation("MergedInvitations")
-  mergedInto   EventInvitation?  @relation("MergedInvitations", fields: [mergedIntoId], references: [id])
-
-  // Updated constraints - removed the recipientId unique constraint to allow multiple pending invitations
-  @@unique([eventId, email])
-  @@unique([eventId, phoneNumber])
-  @@index([inviteToken])
-  @@index([status])
-  @@index([email])
+  @@unique([phoneNumber, eventId])
   @@index([phoneNumber])
-  @@index([recipientId])
-  @@map("event_invitations")
+  @@index([eventId])
+  @@index([status])
+  @@index([inviteToken])
+  @@map("invitations")
 }
 
 model Image {

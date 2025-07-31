@@ -1,33 +1,68 @@
 import crypto from 'crypto';
-import libphonenumber from 'google-libphonenumber';
+import {
+    parsePhoneNumberFromString,
+    isValidPhoneNumber,
+    type CountryCode
+} from 'libphonenumber-js';
 import { sendSingleSMSAction } from '@/actions/smsglobal';
 import { SMSMessage } from '@/types/smsglobal';
 
-const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
+// const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
 
 export const generateOTP = (): string => {
     return crypto.randomInt(100000, 999999).toString();
 };
 
-export const validatePhoneNumber = (phoneNumber: string) => {
+export const validatePhoneNumber = (phone: string) => {
     try {
-        const parsed = phoneUtil.parse(phoneNumber);
-        const isValid = phoneUtil.isValidNumber(parsed);
-        const formatted = phoneUtil.format(
-            parsed,
-            libphonenumber.PhoneNumberFormat.E164
-        );
+        let phoneNumber = parsePhoneNumberFromString(phone);
 
-        return {
-            isValid,
-            formatted: isValid ? formatted : phoneNumber,
-            original: phoneNumber
-        };
+        if (phoneNumber && isValidPhoneNumber(phone)) {
+            return {
+                isValid: true,
+                formatted: phoneNumber.formatInternational(),
+                original: phone
+            };
+        }
+
+        const commonCountries: CountryCode[] = [
+            'AU',
+            'US',
+            'GB',
+            'CA',
+            'NZ',
+            'DE',
+            'FR',
+            'IT',
+            'ES',
+            'JP',
+            'IN',
+            'BR',
+            'MX'
+        ];
+
+        for (const countryCode of commonCountries) {
+            try {
+                phoneNumber = parsePhoneNumberFromString(phone, countryCode);
+                if (phoneNumber && phoneNumber.isValid()) {
+                    return {
+                        isValid: true,
+                        formatted: phoneNumber.formatInternational(),
+                        original: phone
+                    };
+                }
+            } catch {
+                // Continue to next country
+                continue;
+            }
+        }
+
+        return { isValid: false, formatted: phone, original: phone };
     } catch (error) {
         return {
             isValid: false,
-            formatted: phoneNumber,
-            original: phoneNumber
+            formatted: phone,
+            original: phone
         };
     }
 };

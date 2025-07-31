@@ -9,6 +9,7 @@ import {
     TrendingDown
 } from 'lucide-react';
 import { DashboardTabs } from './DashboardTabs';
+import Link from 'next/link';
 
 const stats = [
     {
@@ -84,7 +85,9 @@ const HomeMain = () => {
                         Dashboard
                     </h1>
                 </div>
-                <Button>Download</Button>
+                <Link href="/event/create">
+                    <Button>Create an Event</Button>
+                </Link>
             </div>
 
             {/* Stats Grid */}

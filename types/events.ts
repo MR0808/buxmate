@@ -82,6 +82,7 @@ export interface InviteGuestsResult {
             | 'new_invitation'
             | 'already_invited'
             | 'potential_duplicate';
+        userId: string;
     }>;
     errors: Array<{ type: 'email' | 'phone'; value: string; error: string }>;
     warnings: Array<{

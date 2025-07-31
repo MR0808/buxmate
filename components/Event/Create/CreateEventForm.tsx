@@ -95,8 +95,6 @@ const CreateEventForm = ({
         };
     };
 
-    const dateTimeInfo = getDateTime();
-
     const onSubmit = (values: z.infer<typeof CreateEventSchema>) => {
         startTransition(async () => {
             const info = getDateTime();

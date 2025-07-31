@@ -62,9 +62,21 @@ const EventDateField = () => {
                             >
                                 <Calendar
                                     mode="single"
-                                    selected={field.value}
-                                    onSelect={(e) => {
-                                        field.onChange(e);
+                                    selected={
+                                        field.value
+                                            ? new Date(field.value)
+                                            : undefined
+                                    }
+                                    onSelect={(date) => {
+                                        if (date) {
+                                            const formattedDate = format(
+                                                date,
+                                                'yyyy-MM-dd' // Adjust format as needed
+                                            );
+                                            field.onChange(formattedDate);
+                                        } else {
+                                            field.onChange(null);
+                                        }
                                         setIsCalendarOpen(false);
                                     }}
                                     disabled={(date) => date < new Date()}
