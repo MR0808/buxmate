@@ -352,7 +352,10 @@ export const addGuests = async (
                         results.success.push({
                             type: 'email',
                             value: email,
-                            status: 'already_invited'
+                            status: 'already_invited',
+                            userId: existingInvitation.recipientId
+                                ? existingInvitation.recipientId
+                                : ''
                         });
                         continue;
                     }
@@ -396,7 +399,8 @@ export const addGuests = async (
                 results.success.push({
                     type: 'email',
                     value: email,
-                    status: existingUser ? 'existing_user' : 'new_invitation'
+                    status: existingUser ? 'existing_user' : 'new_invitation',
+                    userId: existingUser ? existingUser.id : ''
                 });
             } catch (error) {
                 results.errors.push({
@@ -425,7 +429,10 @@ export const addGuests = async (
                         results.success.push({
                             type: 'phone',
                             value: phoneNumber.formatted,
-                            status: 'already_invited'
+                            status: 'already_invited',
+                            userId: existingInvitation.recipientId
+                                ? existingInvitation.recipientId
+                                : ''
                         });
                         continue;
                     }
@@ -472,7 +479,8 @@ export const addGuests = async (
                 results.success.push({
                     type: 'phone',
                     value: phoneNumber.formatted,
-                    status: existingUser ? 'existing_user' : 'new_invitation'
+                    status: existingUser ? 'existing_user' : 'new_invitation',
+                    userId: existingUser ? existingUser.id : ''
                 });
             } catch (error) {
                 results.errors.push({
@@ -483,6 +491,8 @@ export const addGuests = async (
                 });
             }
         }
+
+        console.log(results);
 
         const data = {
             validatedData,
