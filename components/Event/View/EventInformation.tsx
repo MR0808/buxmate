@@ -14,13 +14,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EventInformationProps } from '@/types/events';
 import { formatDollarsForDisplay } from '@/lib/cost';
+import Link from 'next/link';
 
-const EventInformation = ({ event }: EventInformationProps) => {
+const EventInformation = ({ event, user }: EventInformationProps) => {
     let phoneNumber: PhoneNumber | undefined;
 
     if (event.host.phoneNumber) {
         phoneNumber = parsePhoneNumber(event.host.phoneNumber);
     }
+
+    const totalGuests = event.invitations.length;
+    const statusCounts = event.invitations.reduce(
+        (acc, { status }) => {
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        },
+        { PENDING: 0, ACCEPTED: 0, DECLINED: 0, EXPIRED: 0 }
+    );
 
     return (
         <Card className="lg:col-span-3 col-span-12">
@@ -135,11 +145,37 @@ const EventInformation = ({ event }: EventInformationProps) => {
                             <UsersRound />
                         </div>
                         <div className="flex-1">
-                            <div className="uppercase text-xs text-default-500 mb-1 leading-[12px]">
-                                GUESTS
+                            <div className="flex flex-row justify-between">
+                                <div className="uppercase text-xs text-default-500 mb-1 leading-[12px]">
+                                    ATTENDEES
+                                </div>
+                                {user.id === event.host.id ? (
+                                    <Link
+                                        href={`/event/${event.slug}/guests`}
+                                        className="text-xs text-default hover:underline cursor-pointer hover:text-default-500 mb-1 leading-[12px]"
+                                    >
+                                        Manage
+                                    </Link>
+                                ) : (
+                                    <div className="text-xs text-default hover:underline cursor-pointer hover:text-default-500 mb-1 leading-[12px]">
+                                        View Guests
+                                    </div>
+                                )}
                             </div>
                             <div className="text-base text-default-600 ">
-                                {event.totalGuests}
+                                <div className="flex flex-col">
+                                    <div className="mb-2">
+                                        Total Guests - {totalGuests}
+                                    </div>
+                                    <div>
+                                        Accepted - {statusCounts.ACCEPTED}
+                                    </div>
+                                    <div>Pending - {statusCounts.PENDING}</div>
+                                    <div>
+                                        Declined - {statusCounts.DECLINED}
+                                    </div>
+                                    <div>Expired - {statusCounts.EXPIRED}</div>
+                                </div>
                             </div>
                         </div>
                     </li>

@@ -10,7 +10,36 @@ type Currency = Prisma.CurrencyGetPayload<{
     select: { id: true; name: true; code: true; symbolNative: true };
 }>;
 
+type Invitation = Prisma.InvitationGetPayload<{
+    include: { recipient: true };
+}>;
+
 export type EventType = Awaited<ReturnType<typeof getEvent>>['data'];
+
+export interface EventProps {
+    host: {
+        name: string;
+        id: string;
+        lastName: string;
+        email: string;
+        image: string | null;
+        phoneNumber: string | null;
+    };
+    totalCost: number;
+    invitations: Invitation[];
+    date: Date;
+    timezone: string;
+    id: string;
+    slug: string;
+    state: {
+        name: string;
+        country: {
+            name: string;
+            id: string;
+        };
+        id: string;
+    };
+}
 
 export interface AddEventProps {
     currencies: Currency[];
@@ -31,29 +60,13 @@ export interface CurrencyProps {
 }
 
 export interface EventInformationProps {
-    event: {
-        host: {
-            name: string;
-            id: string;
-            lastName: string;
-            email: string;
-            image: string | null;
-            phoneNumber: string | null;
-        };
-        totalCost: number;
-        totalGuests: number;
-        date: Date;
-        timezone: string;
-        id: string;
-        state: {
-            name: string;
-            country: {
-                name: string;
-                id: string;
-            };
-            id: string;
-        };
-    };
+    user: Session['user'];
+    event: EventProps;
+}
+
+export interface ManageGuestsProps {
+    user: Session['user'];
+    event: EventProps;
 }
 
 export interface AddGuestsProps {
@@ -63,8 +76,6 @@ export interface AddGuestsProps {
 }
 
 export type ValidationResult = {
-    validEmails?: string[];
-    invalidEmails?: string[];
     validPhoneNumbers?: Array<{
         original: string;
         formatted: string;
@@ -73,27 +84,26 @@ export type ValidationResult = {
     invalidPhoneNumbers?: string[];
 };
 
-export interface InviteGuestsResult {
-    success: Array<{
-        type: 'email' | 'phone';
-        value: string;
-        status:
-            | 'existing_user'
-            | 'new_invitation'
-            | 'already_invited'
-            | 'potential_duplicate';
-        userId: string;
-    }>;
-    errors: Array<{ type: 'email' | 'phone'; value: string; error: string }>;
-    warnings: Array<{
-        type: 'email' | 'phone';
-        value: string;
-        warning: string;
-    }>;
+export interface InvitationResult {
+    success: boolean;
+    invitations: {
+        phoneNumber: string;
+        status: 'created' | 'duplicate' | 'declined' | 'expired';
+        isRegisteredUser: boolean;
+        invitation: Invitation;
+    }[];
+    errors: string[];
 }
 
-export interface MergeResult {
-    mergedInvitations: number;
-    acceptedEvents: string[];
-    errors: string[];
+export interface SendInvitationSMSProps {
+    invitation: {
+        id: string;
+        inviteToken: string;
+        phoneNumber: string;
+    };
+    event: {
+        hostName: string;
+        hostLastName: string;
+        title: string;
+    };
 }

@@ -29,7 +29,6 @@ import { AccountFormInput } from '@/components/Form/FormInput';
 import { cn } from '@/lib/utils';
 import { CreateActivityProps } from '@/types/activity';
 import { CreateActivitySchema } from '@/schemas/activity';
-import Autocomplete from '@/components/Autocomplete/Autocomplete';
 import AddressAutoComplete from '@/components/Autocomplete/AddressAutoComplete';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

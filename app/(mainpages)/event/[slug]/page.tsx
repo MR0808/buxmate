@@ -66,14 +66,15 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
         date: data.date,
         state: data.state,
         totalCost,
-        totalGuests: data.invitations.length
+        invitations: data.invitations,
+        slug: data.slug
     };
 
     return (
         <EventWrapper event={data} userSession={userSession}>
             <div className="space-y-5">
                 <div className="grid grid-cols-12 gap-5">
-                    <EventInformation event={event} />
+                    <EventInformation event={event} user={userSession.user} />
                     <Card className="col-span-12 xl:col-span-5">
                         <CardHeader>
                             <CardTitle>

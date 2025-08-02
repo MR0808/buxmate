@@ -1,10 +1,10 @@
 'use client';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, SubmitErrorHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useTransition, useState } from 'react';
 import { toast } from 'sonner';
-import { XCircle, Mail, Phone } from 'lucide-react';
+import { XCircle, Phone } from 'lucide-react';
 
 import {
     Form,
@@ -25,19 +25,24 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { SubmitButton } from '@/components/Form/Buttons';
-import { AddGuestsProps, ValidationResult } from '@/types/events';
+import { AddGuestsProps, InvitationResult } from '@/types/events';
 import { AddGuestsSchema } from '@/schemas/event';
 import { addGuests } from '@/actions/event';
 import { Button } from '@/components/ui/button';
 
 const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
     const [isPending, startTransition] = useTransition();
-    const [lastResult, setLastResult] = useState<ValidationResult | null>(null);
+    const [success, setSuccess] = useState(false);
+    const [invalidPhoneNumbers, setInvalidPhoneNumbers] = useState<
+        string[] | null | undefined
+    >(null);
+    const [validPhoneNumbers, setValidPhoneNumbers] = useState<
+        InvitationResult | undefined | null
+    >(undefined);
 
     const form = useForm<z.infer<typeof AddGuestsSchema>>({
         resolver: zodResolver(AddGuestsSchema),
         defaultValues: {
-            emails: '',
             phoneNumbers: ''
         }
     });
@@ -48,19 +53,21 @@ const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
 
             if (result.success && result.data) {
                 toast.success(result.message);
-                console.log(result.data);
-                setLastResult(result.data.validatedData);
-                // form.reset();
+                setSuccess(true);
+                setInvalidPhoneNumbers(
+                    result.data.validatedData.invalidPhoneNumbers
+                );
+                setValidPhoneNumbers(result.data.results);
+                form.reset();
             } else {
                 toast.error(result.message);
-                setLastResult(null);
+                setInvalidPhoneNumbers(null);
+                setValidPhoneNumbers(null);
 
                 // Handle validation errors
                 if (result.errors) {
                     result.errors.forEach((error) => {
-                        if (error.path.includes('emails')) {
-                            form.setError('emails', { message: error.message });
-                        } else if (error.path.includes('phoneNumbers')) {
+                        if (error.path.includes('phoneNumbers')) {
                             form.setError('phoneNumbers', {
                                 message: error.message
                             });
@@ -77,7 +84,9 @@ const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
         setOpen(isOpen);
         if (!isOpen) {
             form.reset();
-            setLastResult(null);
+            setInvalidPhoneNumbers(null);
+            setValidPhoneNumbers(null);
+            setSuccess(false);
         }
     };
 
@@ -88,82 +97,35 @@ const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
                     <DialogTitle>Add Guests</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    {lastResult
-                        ? 'Thank you. your guests have been invited. See below the results of which emails and phone numbers were accepted, and which need fixing.'
-                        : `Add guests below either by email or phone number. All guests will receive an invite to the site if they aren't already a member, as well as added to your event.`}
+                    {success
+                        ? 'Thank you. your guests have been invited. See below the results of which phone numbers were accepted, and which need fixing.'
+                        : `Add guests below either phone number. All guests will receive an invite to the site if they aren't already a member, as well as added to your event.`}
                 </DialogDescription>
-                {lastResult ? (
+                {success ? (
                     <>
-                        {lastResult.validEmails &&
-                            lastResult.validEmails.length > 0 && (
-                                <div>
-                                    <h4 className="font-semibold text-green-600 flex items-center gap-2 mb-2">
-                                        <Mail className="h-4 w-4" />
-                                        Valid Emails (
-                                        {lastResult.validEmails.length})
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {lastResult.validEmails.map(
-                                            (email, index) => (
-                                                <Badge
-                                                    key={index}
-                                                    variant="secondary"
-                                                    className="bg-green-50 text-green-700 border-green-200"
-                                                >
-                                                    {email}
-                                                </Badge>
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                        {/* Invalid Emails */}
-                        {lastResult.invalidEmails &&
-                            lastResult.invalidEmails.length > 0 && (
-                                <div>
-                                    <h4 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
-                                        <XCircle className="h-4 w-4" />
-                                        Invalid Emails (
-                                        {lastResult.invalidEmails.length})
-                                    </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {lastResult.invalidEmails.map(
-                                            (email, index) => (
-                                                <Badge
-                                                    key={index}
-                                                    variant="secondary"
-                                                    className="bg-red-50 text-red-700 border-red-200"
-                                                >
-                                                    {email}
-                                                </Badge>
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                        {/* Valid Phone Numbers */}
-                        {lastResult.validPhoneNumbers &&
-                            lastResult.validPhoneNumbers.length > 0 && (
+                        {validPhoneNumbers &&
+                            validPhoneNumbers.invitations.length > 0 && (
                                 <div>
                                     <h4 className="font-semibold text-green-600 flex items-center gap-2 mb-2">
                                         <Phone className="h-4 w-4" />
                                         Valid Phone Numbers (
-                                        {lastResult.validPhoneNumbers.length})
+                                        {validPhoneNumbers.invitations.length})
                                     </h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {lastResult.validPhoneNumbers.map(
+                                    <div className="flex flex-col gap-2">
+                                        {validPhoneNumbers.invitations.map(
                                             (phone, index) => (
-                                                <Badge
+                                                <div
                                                     key={index}
-                                                    variant="secondary"
-                                                    className="bg-green-50 text-green-700 border-green-200"
+                                                    className="flex flex-row gap-2"
                                                 >
-                                                    {phone.formatted}{' '}
-                                                    {phone.country &&
-                                                        `(${phone.country})`}
-                                                </Badge>
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="bg-green-50 text-green-700 border-green-200"
+                                                    >
+                                                        {phone.phoneNumber}
+                                                    </Badge>
+                                                    <div className="capitalize">{` - ${phone.status}`}</div>
+                                                </div>
                                             )
                                         )}
                                     </div>
@@ -171,16 +133,16 @@ const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
                             )}
 
                         {/* Invalid Phone Numbers */}
-                        {lastResult.invalidPhoneNumbers &&
-                            lastResult.invalidPhoneNumbers.length > 0 && (
+                        {invalidPhoneNumbers &&
+                            invalidPhoneNumbers.length > 0 && (
                                 <div>
                                     <h4 className="font-semibold text-red-600 flex items-center gap-2 mb-2">
                                         <XCircle className="h-4 w-4" />
                                         Invalid Phone Numbers (
-                                        {lastResult.invalidPhoneNumbers.length})
+                                        {invalidPhoneNumbers.length})
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
-                                        {lastResult.invalidPhoneNumbers.map(
+                                        {invalidPhoneNumbers.map(
                                             (phone, index) => (
                                                 <Badge
                                                     key={index}
@@ -211,35 +173,13 @@ const AddGuests = ({ open, setOpen, eventSlug }: AddGuestsProps) => {
                         >
                             <FormField
                                 control={form.control}
-                                name="emails"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email Addresses</FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                placeholder="Enter email addresses (e.g., john@example.com, jane@example.com or paste a list)"
-                                                className="min-h-[100px] resize-none"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            Separate multiple emails with commas
-                                            or new lines
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
                                 name="phoneNumbers"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Phone Numbers</FormLabel>
                                         <FormControl>
                                             <Textarea
-                                                placeholder="Enter phone numbers (e.g., +1-555-123-4567, (555) 987-6543 or paste a list)"
+                                                placeholder="Enter phone numbers (e.g., 0411 999 444 or paste a list)"
                                                 className="min-h-[100px] resize-none"
                                                 {...field}
                                             />

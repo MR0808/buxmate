@@ -8,6 +8,7 @@ import { Alert } from '@/components/ui/alert';
 import EventWrapper from '@/components/Event/View/EventWrapper';
 import CreateActivity from '@/components/Event/Activity/Create/CreateActivity';
 import EventInformation from '@/components/Event/View/EventInformation';
+import ManageGuests from '@/components/Event/View/ManageGuests';
 
 export async function generateMetadata({
     params
@@ -19,8 +20,8 @@ export async function generateMetadata({
     if (!event) {
         return { title: 'Event not found' };
     }
-    const title = `Create Activity | ${event.title}`;
-    const description = 'Create an activity';
+    const title = `Manage Guests | ${event.title}`;
+    const description = 'Manage Guests';
 
     return {
         title,
@@ -28,9 +29,9 @@ export async function generateMetadata({
     };
 }
 
-const EventDetailsPage = async (props: { params: ParamsSlug }) => {
+const ManageGuestsPage = async (props: { params: ParamsSlug }) => {
     const { slug } = await props.params;
-    const userSession = await authCheck(`/event/${slug}/activity/create`);
+    const userSession = await authCheck(`/event/${slug}/guests`);
     const { data } = await getEvent(slug);
 
     if (!data) return <Alert color="destructive"> Event id is not valid</Alert>;
@@ -53,13 +54,17 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
                     <EventInformation event={event} user={userSession.user} />
                     <Card className="col-span-12 xl:col-span-9">
                         <CardHeader>
-                            <CardTitle>Create Activity</CardTitle>
+                            <CardTitle>Manage Guests</CardTitle>
                         </CardHeader>
                         <CardContent className="p-6">
-                            <CreateActivity
-                                userSession={userSession}
-                                event={event}
-                            />
+                            {userSession.user.id === data.hostId ? (
+                                <ManageGuests
+                                    user={userSession.user}
+                                    event={event}
+                                />
+                            ) : (
+                                'You do not have access to this page. Please go back to the event.'
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -67,4 +72,4 @@ const EventDetailsPage = async (props: { params: ParamsSlug }) => {
         </EventWrapper>
     );
 };
-export default EventDetailsPage;
+export default ManageGuestsPage;

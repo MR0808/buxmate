@@ -25,29 +25,12 @@ export const CreateEventSchemaOutput = z.object({
     currency: z.string().min(1, 'Currency is required')
 });
 
-export const AddGuestsSchema = z
-    .object({
-        emails: z.string().optional(),
-        phoneNumbers: z.string().optional()
-    })
-    .refine(
-        (data) => {
-            const hasEmails = data.emails && data.emails.trim().length > 0;
-            const hasPhones =
-                data.phoneNumbers && data.phoneNumbers.trim().length > 0;
-            return hasEmails || hasPhones;
-        },
-        {
-            message:
-                'Please provide at least one email address or phone number',
-            path: ['root']
-        }
-    );
+export const AddGuestsSchema = z.object({
+    phoneNumbers: z.string()
+});
 
 export const AddGuestsValidate = z
     .object({
-        validEmails: z.array(z.string()).optional(),
-        invalidEmails: z.array(z.string()).optional(),
         validPhoneNumbers: z
             .array(
                 z.object({
@@ -61,15 +44,12 @@ export const AddGuestsValidate = z
     })
     .refine(
         (data) => {
-            const hasValidEmails =
-                data.validEmails && data.validEmails.length > 0;
             const hasValidPhones =
                 data.validPhoneNumbers && data.validPhoneNumbers.length > 0;
-            return hasValidEmails || hasValidPhones;
+            return hasValidPhones;
         },
         {
-            message:
-                'Please provide at least one valid email address or phone number',
+            message: 'Please provide at least one valid phone number',
             path: ['root']
         }
     );

@@ -9,7 +9,6 @@ import {
     logPhoneVerifyRequested,
     logPhoneVerified
 } from '@/actions/audit/audit-auth';
-import { mergeDuplicateInvitations } from '@/actions/register';
 
 export const addPhoneNumber = async (userId: string, phoneNumber: string) => {
     try {
@@ -109,12 +108,6 @@ export const verifyPhoneOTP = async (
         });
 
         await logPhoneVerified(userId, user.phoneNumber || '');
-
-        await mergeDuplicateInvitations(
-            user.id,
-            user.email,
-            user.phoneNumber || undefined
-        );
 
         if (email && password) {
             await auth.api.signInEmail({

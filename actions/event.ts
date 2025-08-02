@@ -1,7 +1,7 @@
 'use server';
 
 import * as z from 'zod';
-import GithubSlugger, { slug } from 'github-slugger';
+import GithubSlugger from 'github-slugger';
 import { InvitationStatus } from '@/generated/prisma';
 
 import { prisma } from '@/lib/prisma';
@@ -12,9 +12,8 @@ import {
     AddGuestsValidate,
     AddGuestsSchema
 } from '@/schemas/event';
-import { isValidEmail } from '@/utils/validateEmail';
 import { validatePhoneNumber } from '@/utils/validatePhoneNumber';
-import { InviteGuestsResult } from '@/types/events';
+import { InvitationResult, SendInvitationSMSProps } from '@/types/events';
 
 const slugger = new GithubSlugger();
 
@@ -62,6 +61,8 @@ export const createEvent = async (
             message: 'Not authorised'
         };
     }
+
+    const user = userSession.user;
 
     try {
         const validatedFields = CreateEventSchemaOutput.safeParse(values);
@@ -112,6 +113,19 @@ export const createEvent = async (
         await prisma.image.update({
             where: { id: values.image },
             data: { relatedEntity: data.id }
+        });
+
+        await prisma.invitation.create({
+            data: {
+                status: 'ACCEPTED',
+                phoneNumber: user.phoneNumber || '',
+                eventId: data.id,
+                senderId: user.id,
+                recipientId: user.id,
+                inviteToken: generateInviteToken(),
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                recipientName: `${user.name} ${user.lastName}`
+            }
         });
 
         return {
@@ -171,7 +185,7 @@ export const getEvent = async (slug: string) => {
                     include: { place: true },
                     orderBy: { startTime: 'asc' }
                 },
-                invitations: true
+                invitations: { include: { recipient: true } }
             }
         });
 
@@ -232,7 +246,7 @@ export const addGuests = async (
     try {
         const event = await prisma.event.findUnique({
             where: { slug: eventSlug },
-            select: { id: true, hostId: true }
+            select: { id: true, host: true, title: true }
         });
 
         if (!event) {
@@ -255,24 +269,7 @@ export const addGuests = async (
             };
         }
 
-        const emailsText = values.emails || '';
         const phoneNumbersText = values.phoneNumbers || '';
-
-        const emailList = emailsText
-            .split(/[,\n]+/)
-            .map((email) => email.trim())
-            .filter((email) => email.length > 0);
-
-        const validEmails: string[] = [];
-        const invalidEmails: string[] = [];
-
-        emailList.forEach((email) => {
-            if (isValidEmail(email)) {
-                validEmails.push(email);
-            } else {
-                invalidEmails.push(email);
-            }
-        });
 
         // Parse and validate phone numbers
         const phoneList = phoneNumbersText
@@ -300,7 +297,6 @@ export const addGuests = async (
             }
         });
 
-        const uniqueEmails = [...new Set(validEmails)];
         const uniquePhoneNumbers = Array.from(
             new Set(validPhoneNumbers.map((phone) => phone.formatted)),
             (formatted) =>
@@ -308,200 +304,142 @@ export const addGuests = async (
         );
 
         const validatedData = AddGuestsValidate.parse({
-            validEmails: uniqueEmails.length > 0 ? uniqueEmails : undefined,
-            invalidEmails: invalidEmails.length > 0 ? invalidEmails : undefined,
             validPhoneNumbers:
                 uniquePhoneNumbers.length > 0 ? uniquePhoneNumbers : undefined,
             invalidPhoneNumbers:
                 invalidPhoneNumbers.length > 0 ? invalidPhoneNumbers : undefined
         });
 
-        const validEmailCount = validatedData.validEmails?.length || 0;
-        const invalidEmailCount = validatedData.invalidEmails?.length || 0;
         const validPhoneCount = validatedData.validPhoneNumbers?.length || 0;
         const invalidPhoneCount =
             validatedData.invalidPhoneNumbers?.length || 0;
 
-        let message = `Successfully processed ${validEmailCount} valid emails and ${validPhoneCount} valid phone numbers`;
+        let message = `Successfully processed ${validPhoneCount} valid phone numbers`;
 
-        if (invalidEmailCount > 0 || invalidPhoneCount > 0) {
-            message += `. Found ${invalidEmailCount} invalid emails and ${invalidPhoneCount} invalid phone numbers`;
+        if (invalidPhoneCount > 0) {
+            message += `. Found ${invalidPhoneCount} invalid phone numbers`;
         }
-        const senderId = event.hostId;
+        const senderId = event.host.id;
 
-        const results: InviteGuestsResult = {
-            success: [],
-            errors: [],
-            warnings: []
+        const results: InvitationResult = {
+            success: true,
+            invitations: [],
+            errors: []
         };
-
-        for (const email of validEmails) {
-            try {
-                // Check for existing invitations and potential duplicates
-                const duplicateCheck = await checkForDuplicateInvitations(
-                    event.id,
-                    email,
-                    undefined
-                );
-
-                if (duplicateCheck.length > 0) {
-                    const existingInvitation = duplicateCheck.find(
-                        (inv) => inv.email === email
-                    );
-                    if (existingInvitation) {
-                        results.success.push({
-                            type: 'email',
-                            value: email,
-                            status: 'already_invited',
-                            userId: existingInvitation.recipientId
-                                ? existingInvitation.recipientId
-                                : ''
-                        });
-                        continue;
-                    }
-
-                    // Check if this email might belong to someone already invited by phone
-                    const potentialDuplicate = duplicateCheck.find(
-                        (inv) =>
-                            inv.recipient?.email === email ||
-                            (inv.phoneNumber && inv.recipient?.email === email)
-                    );
-
-                    if (potentialDuplicate) {
-                        results.warnings.push({
-                            type: 'email',
-                            value: email,
-                            warning:
-                                'This person may already be invited by phone number'
-                        });
-                    }
-                }
-
-                // Check if user exists
-                const existingUser = await prisma.user.findUnique({
-                    where: { email }
-                });
-
-                // Create invitation
-                await prisma.eventInvitation.create({
-                    data: {
-                        eventId: event.id,
-                        senderId,
-                        email,
-                        recipientId: existingUser?.id,
-                        message,
-                        expiresAt: new Date(
-                            Date.now() + 30 * 24 * 60 * 60 * 1000
-                        ) // 30 days
-                    }
-                });
-
-                results.success.push({
-                    type: 'email',
-                    value: email,
-                    status: existingUser ? 'existing_user' : 'new_invitation',
-                    userId: existingUser ? existingUser.id : ''
-                });
-            } catch (error) {
-                results.errors.push({
-                    type: 'email',
-                    value: email,
-                    error:
-                        error instanceof Error ? error.message : 'Unknown error'
-                });
-            }
-        }
 
         for (const phoneNumber of validPhoneNumbers) {
             try {
-                // Check for existing invitations and potential duplicates
-                const duplicateCheck = await checkForDuplicateInvitations(
-                    event.id,
-                    undefined,
-                    phoneNumber.formatted
-                );
-
-                if (duplicateCheck.length > 0) {
-                    const existingInvitation = duplicateCheck.find(
-                        (inv) => inv.phoneNumber === phoneNumber.formatted
-                    );
-                    if (existingInvitation) {
-                        results.success.push({
-                            type: 'phone',
-                            value: phoneNumber.formatted,
-                            status: 'already_invited',
-                            userId: existingInvitation.recipientId
-                                ? existingInvitation.recipientId
-                                : ''
-                        });
-                        continue;
-                    }
-
-                    // Check if this phone might belong to someone already invited by email
-                    const potentialDuplicate = duplicateCheck.find(
-                        (inv) =>
-                            inv.recipient?.phoneNumber ===
-                                phoneNumber.formatted ||
-                            (inv.email &&
-                                inv.recipient?.phoneNumber ===
-                                    phoneNumber.formatted)
-                    );
-
-                    if (potentialDuplicate) {
-                        results.warnings.push({
-                            type: 'phone',
-                            value: phoneNumber.formatted,
-                            warning:
-                                'This person may already be invited by email'
-                        });
-                    }
-                }
-
-                // Check if user exists
+                // Check if phone number belongs to a registered user
                 const existingUser = await prisma.user.findUnique({
                     where: { phoneNumber: phoneNumber.formatted }
                 });
 
-                // Create invitation
-                await prisma.eventInvitation.create({
+                // Check if invitation already exists
+                const existingInvitation = await prisma.invitation.findUnique({
+                    where: {
+                        phoneNumber_eventId: {
+                            phoneNumber: phoneNumber.formatted,
+                            eventId: event.id
+                        }
+                    },
+                    include: { recipient: true }
+                });
+
+                if (existingInvitation) {
+                    // Update existing invitation if it was declined or expired
+                    if (existingInvitation.status === 'DECLINED') {
+                        results.invitations.push({
+                            phoneNumber: phoneNumber.formatted,
+                            status: 'declined',
+                            isRegisteredUser: !!existingUser,
+                            invitation: existingInvitation
+                        });
+                    } else if (existingInvitation.status === 'EXPIRED') {
+                        const updatedInvitation =
+                            await prisma.invitation.update({
+                                where: { id: existingInvitation.id },
+                                data: {
+                                    status: InvitationStatus.PENDING,
+                                    sentAt: null,
+                                    respondedAt: null,
+                                    inviteToken: generateInviteToken()
+                                },
+                                include: { recipient: true }
+                            });
+
+                        results.invitations.push({
+                            phoneNumber: phoneNumber.formatted,
+                            status: 'expired',
+                            isRegisteredUser: !!existingUser,
+                            invitation: updatedInvitation
+                        });
+                    } else {
+                        results.invitations.push({
+                            phoneNumber: phoneNumber.formatted,
+                            status: 'duplicate',
+                            isRegisteredUser: !!existingUser,
+                            invitation: existingInvitation
+                        });
+                    }
+                    continue;
+                }
+
+                // Create new invitation
+                const invitation = await prisma.invitation.create({
                     data: {
+                        phoneNumber: phoneNumber.formatted,
                         eventId: event.id,
                         senderId,
-                        phoneNumber: phoneNumber.formatted,
                         recipientId: existingUser?.id,
-                        message,
+                        inviteToken: generateInviteToken(),
                         expiresAt: new Date(
                             Date.now() + 30 * 24 * 60 * 60 * 1000
                         ) // 30 days
-                    }
+                    },
+                    include: { recipient: true }
                 });
 
-                results.success.push({
-                    type: 'phone',
-                    value: phoneNumber.formatted,
-                    status: existingUser ? 'existing_user' : 'new_invitation',
-                    userId: existingUser ? existingUser.id : ''
+                results.invitations.push({
+                    phoneNumber: phoneNumber.formatted,
+                    status: 'created',
+                    isRegisteredUser: !!existingUser,
+                    invitation
                 });
             } catch (error) {
-                results.errors.push({
-                    type: 'phone',
-                    value: phoneNumber.formatted,
-                    error:
-                        error instanceof Error ? error.message : 'Unknown error'
-                });
+                results.errors.push(
+                    `Failed to process ${phoneNumber}: ${error}`
+                );
+                results.success = false;
             }
         }
 
-        console.log(results);
+        const validOptions = ['created', 'expired'];
+
+        for (const invitation of results.invitations) {
+            if (validOptions.includes(invitation.status)) {
+                const inviteInfo: SendInvitationSMSProps = {
+                    invitation: {
+                        id: invitation.invitation.id,
+                        inviteToken: invitation.invitation.inviteToken!,
+                        phoneNumber: invitation.invitation.phoneNumber
+                    },
+                    event: {
+                        hostName: event.host.name,
+                        hostLastName: event.host.lastName,
+                        title: event.title
+                    }
+                };
+                await sendInvitationSMS(inviteInfo);
+            }
+        }
 
         const data = {
             validatedData,
             summary: {
-                validEmails: validEmailCount,
-                invalidEmails: invalidEmailCount,
                 validPhoneNumbers: validPhoneCount,
                 invalidPhoneNumbers: invalidPhoneCount
-            }
+            },
+            results
         };
 
         return {
@@ -529,69 +467,30 @@ export const addGuests = async (
     }
 };
 
-/**
- * Get all active invitations for a user (excluding merged ones)
- */
-export async function getUserActiveInvitations(userId: string) {
-    return await prisma.eventInvitation.findMany({
-        where: {
-            recipientId: userId,
-            status: {
-                in: [InvitationStatus.PENDING, InvitationStatus.ACCEPTED]
-            }
-        },
-        include: {
-            event: {
-                select: {
-                    id: true,
-                    slug: true,
-                    title: true,
-                    description: true,
-                    date: true,
-                    image: true
-                }
-            },
-            sender: {
-                select: {
-                    name: true,
-                    lastName: true
-                }
-            }
-        },
-        orderBy: { createdAt: 'desc' }
-    });
-}
+const generateInviteToken = (): string => {
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
+};
 
-/**
- * Check for potential duplicate invitations before sending
- */
-export async function checkForDuplicateInvitations(
-    eventId: string,
-    email?: string,
-    phoneNumber?: string
-) {
-    if (!email && !phoneNumber) return [];
+const sendInvitationSMS = async ({
+    invitation,
+    event
+}: SendInvitationSMSProps) => {
+    // Implement your SMS service integration here
+    // Example with Twilio, AWS SNS, or similar service
 
-    const existingInvitations = await prisma.eventInvitation.findMany({
-        where: {
-            eventId,
-            status: {
-                in: [InvitationStatus.PENDING, InvitationStatus.ACCEPTED]
-            },
-            OR: [
-                ...(email ? [{ email }] : []),
-                ...(phoneNumber ? [{ phoneNumber }] : [])
-            ]
-        },
-        include: {
-            recipient: {
-                select: {
-                    email: true,
-                    phoneNumber: true
-                }
-            }
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.inviteToken}`;
+    const hostName = `${event.hostName} ${event.hostLastName}`.trim();
+    const message = `${hostName} invited you to ${event.title}! View details and RSVP: ${inviteLink}`;
+
+    // Send SMS logic here
+    console.log(`Sending SMS to ${invitation.phoneNumber}: ${message}`);
+
+    // Update invitation with SMS sent timestamp
+    await prisma.invitation.update({
+        where: { id: invitation.id },
+        data: {
+            sentAt: new Date()
+            // smsMessageId: messageId, // Store SMS provider message ID
         }
     });
-
-    return existingInvitations;
-}
+};
