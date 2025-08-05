@@ -51,8 +51,8 @@ const ManageGuestsPage = async (props: { params: ParamsSlug }) => {
         <EventWrapper event={data} userSession={userSession}>
             <div className="space-y-5">
                 <div className="grid grid-cols-12 gap-5">
-                    <EventInformation event={event} user={userSession.user} />
-                    <Card className="col-span-12 xl:col-span-9">
+                    {/* <EventInformation event={event} user={userSession.user} /> */}
+                    <Card className="col-span-12">
                         <CardHeader>
                             <CardTitle>Manage Guests</CardTitle>
                         </CardHeader>
