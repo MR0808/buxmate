@@ -109,6 +109,12 @@ export const verifyPhoneOTP = async (
 
         await logPhoneVerified(userId, user.phoneNumber || '');
 
+        if (user.phoneNumber)
+            await prisma.invitation.updateMany({
+                where: { phoneNumber: user.phoneNumber },
+                data: { recipientId: user.id }
+            });
+
         if (email && password) {
             await auth.api.signInEmail({
                 headers: await headers(),
