@@ -478,7 +478,7 @@ const sendInvitationSMS = async ({
     // Implement your SMS service integration here
     // Example with Twilio, AWS SNS, or similar service
 
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${invitation.inviteToken}`;
+    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/invite/${invitation.inviteToken}`;
     const hostName = `${event.hostName} ${event.hostLastName}`.trim();
     const message = `${hostName} invited you to ${event.title}! View details and RSVP: ${inviteLink}`;
 
