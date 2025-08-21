@@ -38,21 +38,6 @@ export const sendEmailVerificationOtpEmail = async ({
     return sent;
 };
 
-// export const sendResetEmail = async ({
-//     email,
-//     link
-// }: {
-//     email: string;
-//     link: string;
-// }) => {
-//     await resend.emails.send({
-//         from: process.env.NEXT_PUBLIC_APP_EMAIL as string,
-//         to: email,
-//         subject: 'Buxmate - Reset password',
-//         html: `<p>Click <a href="${link}">here</a> to reset password.</p>`
-//     });
-// };
-
 export const sendResetEmail = async ({
     email,
     link,
