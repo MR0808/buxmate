@@ -7,7 +7,6 @@ import { useTransition, useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Camera } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Form,
     FormControl,
