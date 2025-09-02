@@ -1,11 +1,10 @@
 'use server';
 
 import * as z from 'zod';
-import GithubSlugger, { slug } from 'github-slugger';
+import GithubSlugger from 'github-slugger';
 
 import { prisma } from '@/lib/prisma';
 import { authCheckServer } from '@/lib/authCheck';
-import { ActionResult } from '@/types/global';
 import { CreateActivitySchemaOutput } from '@/schemas/activity';
 
 const slugger = new GithubSlugger();
